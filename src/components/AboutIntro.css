@@ -1,0 +1,481 @@
+/* =====================================
+   ABOUT VIEW
+===================================== */
+
+.about-intro {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100vh;
+
+  overflow: hidden;
+
+  background: #080808;
+
+  color: #ffffff;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition:
+    opacity 0.8s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      );
+}
+
+.about-intro.about-active {
+  opacity: 1;
+
+  visibility: visible;
+}
+
+
+/* =====================================
+   MAIN LAYOUT
+===================================== */
+
+.about-inner {
+  width: 100%;
+  height: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    0.82fr
+    1.18fr;
+
+  gap: 7vw;
+
+  align-items: center;
+
+  padding:
+    80px 7vw;
+}
+
+
+/* =====================================
+   LEFT CONTENT
+===================================== */
+
+.about-copy {
+  max-width: 500px;
+
+  opacity: 0;
+
+  transform:
+    translateY(28px);
+
+  transition:
+    opacity 1s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      )
+      0.45s,
+
+    transform 1.1s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      )
+      0.45s;
+}
+
+.about-active .about-copy {
+  opacity: 1;
+
+  transform:
+    translateY(0);
+}
+
+
+.about-label {
+  margin-bottom: 30px;
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  letter-spacing: 4px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.5
+    );
+}
+
+
+.about-copy h2 {
+  margin: 0;
+
+  font-size:
+    clamp(
+      52px,
+      6.3vw,
+      108px
+    );
+
+  line-height: 0.84;
+
+  font-weight: 900;
+
+  letter-spacing: -0.075em;
+}
+
+
+.about-copy p {
+  max-width: 420px;
+
+  margin:
+    30px 0 0;
+
+  font-size: 14px;
+
+  line-height: 1.8;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.55
+    );
+}
+
+
+.about-role {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 42px;
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  letter-spacing: 4px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.65
+    );
+}
+
+.about-role span {
+  opacity: 0.4;
+}
+
+
+/* =====================================
+   IMAGE AREA
+===================================== */
+
+.about-visual {
+  position: relative;
+
+  width: 100%;
+
+  height: 76vh;
+
+  overflow: hidden;
+
+  background: #03030300;
+}
+
+
+.about-image-frame {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  opacity: 0;
+
+  transform:
+    scale(1.035);
+
+  transition:
+    opacity 0.45s ease,
+    transform 1.6s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      );
+}
+
+
+.about-active
+.about-image-frame {
+  opacity: 1;
+
+  transform:
+    scale(1);
+}
+
+
+/* =====================================
+   IMAGE
+===================================== */
+
+.about-image-frame img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  object-position: center;
+
+  filter:
+    grayscale(100%)
+    brightness(0.12)
+    contrast(1.05);
+
+  transform:
+    scale(1.09);
+
+  transition:
+    transform 1.8s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      ),
+
+    filter 1.5s
+      cubic-bezier(
+        0.16,
+        1,
+        0.3,
+        1
+      );
+}
+
+
+/* =====================================
+   IMAGE AFTER FLASH
+===================================== */
+
+.about-revealed
+.about-image-frame img {
+  transform:
+    scale(1);
+
+  filter:
+    grayscale(100%)
+    brightness(0.72)
+    contrast(1.08);
+}
+
+
+/* =====================================
+   DIAGONAL FLASH
+===================================== */
+.image-flash {
+  position: absolute;
+  inset: 0;
+
+  z-index: 3;
+
+  pointer-events: none;
+
+  background: linear-gradient(
+    90deg,
+    #000000 0%,
+    rgba(0, 0, 0, 0.9) 35%,
+    rgba(0, 0, 0, 0.3) 75%,
+    transparent 100%
+  );
+
+  opacity: 1;
+
+  transform: translateX(0);
+
+  transition:
+    opacity 1.1s ease;
+}
+
+.about-revealed .image-flash {
+  opacity: 0;
+}
+
+
+/*
+  After scroll / About reveal:
+  complete overlay disappears.
+*/
+
+.about-revealed .image-flash {
+  opacity: 0;
+}
+/* The flash happens once when About becomes active */
+.about-revealed .image-flash {
+  animation:
+    imageSweep
+    1.15s
+    cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    )
+    0.05s
+    forwards;
+}
+
+@keyframes imageSweep {
+  0% {
+    opacity: 0;
+
+    transform:
+      rotate(-8deg)
+      translateY(-120%);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  55% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      rotate(-8deg)
+      translateY(420%);
+  }
+}
+
+/* Subtle dark vignette over the image */
+.about-image-frame::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: 4;
+
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.35) 0%,
+    transparent 35%,
+    transparent 70%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+}
+
+/* =====================================
+   FOOTER
+===================================== */
+
+.about-footer {
+  position: absolute;
+
+  left: 7vw;
+  right: 7vw;
+  bottom: 30px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-size: 8px;
+  letter-spacing: 3px;
+
+  pointer-events: none;
+}
+
+/* LEFT TEXT — initially visible */
+.about-footer span:first-child {
+  opacity: 0.45;
+
+  transition:
+    opacity 0.8s ease;
+}
+
+/* RIGHT TEXT — initially completely hidden */
+.about-footer span:last-child {
+  opacity: 0;
+
+  transition:
+    opacity 0.8s ease;
+}
+
+
+/*
+   After the About view is revealed,
+   BOTH disappear.
+*/
+.about-revealed .about-footer span:first-child,
+.about-revealed .about-footer span:last-child {
+  opacity: 0;
+}
+
+/* =====================================
+   MOBILE
+===================================== */
+
+@media (max-width: 800px) {
+
+  .about-inner {
+    grid-template-columns: 1fr;
+
+    gap: 40px;
+
+    padding:
+      100px 24px
+      80px;
+  }
+
+  .about-copy h2 {
+    font-size:
+      clamp(
+        50px,
+        15vw,
+        90px
+      );
+  }
+
+  .about-visual {
+    height: 45vh;
+  }
+
+  .about-footer {
+    left: 24px;
+
+    right: 24px;
+  }
+
+}

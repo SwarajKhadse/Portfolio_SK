@@ -378,8 +378,8 @@ function ParticleIntro({ phase }) {
       /* FIELD MOVEMENT */
 
       const movement =
-        0.025 +
-        spreadValue * 0.04;
+        0.008 +
+        spreadValue * 0.01;
 
       x +=
         Math.sin(

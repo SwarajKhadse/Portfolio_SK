@@ -1,0 +1,583 @@
+.work-section {
+    position: relative;
+  
+    width: 100%;
+    min-height: 100vh;
+  
+    padding:
+      100px 7vw
+      140px;
+  
+    background: #070707;
+  
+    color: #ffffff;
+  }
+  
+  
+  /* =====================================
+     HEADER
+  ===================================== */
+  
+  .work-header {
+    display: flex;
+  
+    justify-content: space-between;
+    align-items: center;
+  
+    padding-bottom: 28px;
+  
+    border-bottom:
+      1px solid
+      rgba(255,255,255,0.12);
+  }
+  
+  .work-label,
+  .work-year {
+    font-size: 9px;
+  
+    font-weight: 600;
+  
+    letter-spacing: 4px;
+  
+    color:
+      rgba(
+        255,
+        255,
+        255,
+        0.5
+      );
+  }
+  
+  
+  /* =====================================
+     INTRO
+  ===================================== */
+  
+  .work-intro {
+    display: flex;
+  
+    justify-content: space-between;
+  
+    align-items: flex-end;
+  
+    gap: 60px;
+  
+    padding:
+      100px 0
+      120px;
+  }
+  
+  .work-intro h2 {
+    margin: 0;
+  
+    font-size:
+      clamp(
+        80px,
+        13vw,
+        190px
+      );
+  
+    line-height: 0.78;
+  
+    font-weight: 900;
+  
+    letter-spacing:
+      -0.09em;
+  }
+  
+  .work-intro p {
+    width: 330px;
+  
+    margin: 0 0 10px;
+  
+    font-size: 13px;
+  
+    line-height: 1.8;
+  
+    color:
+      rgba(
+        255,
+        255,
+        255,
+        0.5
+      );
+  }
+  
+  
+  /* =====================================
+     FEATURED PROJECT
+  ===================================== */
+  
+  .featured-project {
+    position: relative;
+  }
+  
+  .project-top {
+    display: flex;
+  
+    justify-content: space-between;
+  
+    margin-bottom: 18px;
+  
+    font-size: 9px;
+  
+    letter-spacing: 3px;
+  
+    color:
+      rgba(
+        255,
+        255,
+        255,
+        0.42
+      );
+  }
+  
+  
+  /* =====================================
+     PROJECT LAYOUT
+  ===================================== */
+  
+  .project-layout {
+    display: grid;
+  
+    grid-template-columns:
+      minmax(0, 1.45fr)
+      minmax(320px, 0.55fr);
+  
+    gap: 60px;
+  
+    align-items: end;
+  }
+  
+  
+  /* =====================================
+     VISUAL
+  ===================================== */
+  
+  .project-visual {
+    position: relative;
+  
+    min-height: 620px;
+  
+    overflow: hidden;
+  
+    display: flex;
+  
+    align-items: center;
+    justify-content: center;
+  
+    background:
+      radial-gradient(
+        circle at center,
+        #62000b 0%,
+        #220003 45%,
+        #090909 100%
+      );
+  }
+  
+  
+  /* Subtle grid */
+  
+  .project-visual::before {
+    content: "";
+  
+    position: absolute;
+  
+    inset: 0;
+  
+    opacity: 0.08;
+  
+    background-image:
+      linear-gradient(
+        rgba(255,255,255,0.15) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255,255,255,0.15) 1px,
+        transparent 1px
+      );
+  
+    background-size:
+      45px 45px;
+  }
+  
+  
+  /* =====================================
+     GLOW
+  ===================================== */
+  
+  .project-glow {
+    position: absolute;
+  
+    width: 360px;
+    height: 360px;
+  
+    border-radius: 50%;
+  
+    background:
+      rgba(180, 0, 20, 0.16);
+  
+    filter: blur(80px);
+  }
+  
+  
+  /* =====================================
+     DEVICE
+  ===================================== */
+  
+  .project-device {
+    position: relative;
+  
+    width: 72%;
+    max-width: 760px;
+  
+    aspect-ratio: 16 / 10;
+  
+    background: #111111;
+  
+    border:
+      1px solid
+      rgba(255,255,255,0.18);
+  
+    border-radius: 14px;
+  
+    overflow: hidden;
+  
+    transform:
+      perspective(1200px)
+      rotateX(4deg)
+      rotateY(-8deg);
+  
+    box-shadow:
+      0 45px 100px
+      rgba(0,0,0,0.55);
+  }
+  
+  .device-bar {
+    height: 38px;
+  
+    border-bottom:
+      1px solid
+      rgba(255,255,255,0.08);
+  
+    background: #151515;
+  }
+  
+  .device-content {
+    height:
+      calc(100% - 38px);
+  
+    display: grid;
+  
+    grid-template-columns:
+      26% 74%;
+  }
+  
+  .device-sidebar {
+    border-right:
+      1px solid
+      rgba(255,255,255,0.08);
+  
+    background: #0d0d0d;
+  }
+  
+  .device-main {
+    padding: 35px;
+  
+    background: #111111;
+  }
+  
+  .device-line {
+    width: 70%;
+  
+    height: 10px;
+  
+    margin-bottom: 12px;
+  
+    border-radius: 4px;
+  
+    background:
+      rgba(255,255,255,0.13);
+  }
+  
+  .device-line.large {
+    width: 45%;
+  
+    height: 18px;
+  
+    background:
+      rgba(255,255,255,0.2);
+  }
+  
+  .device-line.short {
+    width: 35%;
+  }
+  
+  .device-cards {
+    display: grid;
+  
+    grid-template-columns:
+      repeat(3, 1fr);
+  
+    gap: 14px;
+  
+    margin-top: 50px;
+  }
+  
+  .device-cards span {
+    height: 100px;
+  
+    border:
+      1px solid
+      rgba(255,255,255,0.08);
+  
+    background:
+      #171717;
+  }
+  
+  
+  /* =====================================
+     ORBITS
+  ===================================== */
+  
+  .project-orbit {
+    position: absolute;
+  
+    border:
+      1px solid
+      rgba(255,255,255,0.13);
+  
+    border-radius: 50%;
+  
+    pointer-events: none;
+  }
+  
+  .orbit-one {
+    width: 700px;
+    height: 220px;
+  
+    transform:
+      rotate(-18deg);
+  }
+  
+  .orbit-two {
+    width: 820px;
+    height: 320px;
+  
+    transform:
+      rotate(28deg);
+  
+    opacity: 0.5;
+  }
+  
+  
+  /* =====================================
+     PROJECT INFO
+  ===================================== */
+  
+  .project-info {
+    padding-bottom: 20px;
+  }
+  
+  .project-category {
+    margin-bottom: 28px;
+  
+    font-size: 9px;
+  
+    letter-spacing: 4px;
+  
+    opacity: 0.45;
+  }
+  
+  .project-info h3 {
+    margin: 0;
+  
+    font-size:
+      clamp(
+        55px,
+        6vw,
+        95px
+      );
+  
+    line-height: 0.82;
+  
+    letter-spacing:
+      -0.07em;
+  
+    font-weight: 900;
+  }
+  
+  .project-info > p {
+    max-width: 390px;
+  
+    margin-top: 30px;
+  
+    font-size: 14px;
+  
+    line-height: 1.8;
+  
+    color:
+      rgba(
+        255,
+        255,
+        255,
+        0.55
+      );
+  }
+  
+  
+  /* =====================================
+     META
+  ===================================== */
+  
+  .project-meta {
+    display: flex;
+  
+    flex-direction: column;
+  
+    gap: 18px;
+  
+    margin-top: 45px;
+  }
+  
+  .project-meta div {
+    display: flex;
+  
+    flex-direction: column;
+  
+    gap: 6px;
+  
+    font-size: 12px;
+  
+    color:
+      rgba(
+        255,
+        255,
+        255,
+        0.65
+      );
+  }
+  
+  .project-meta span {
+    font-size: 8px;
+  
+    letter-spacing: 3px;
+  
+    opacity: 0.4;
+  }
+  
+  
+  /* =====================================
+     BUTTON
+  ===================================== */
+  
+  .project-button {
+    margin-top: 45px;
+  
+    padding: 0;
+  
+    display: flex;
+  
+    align-items: center;
+  
+    gap: 15px;
+  
+    border: 0;
+  
+    background: transparent;
+  
+    color: #ffffff;
+  
+    cursor: pointer;
+  
+    font-size: 9px;
+  
+    font-weight: 600;
+  
+    letter-spacing: 3px;
+  }
+  
+  .project-button span {
+    font-size: 18px;
+  
+    transition:
+      transform 0.3s ease;
+  }
+  
+  .project-button:hover span {
+    transform:
+      translate(4px, -4px);
+  }
+  
+  
+  /* =====================================
+     MOBILE
+  ===================================== */
+  
+  @media (max-width: 900px) {
+  
+    .work-section {
+      padding:
+        75px 24px
+        100px;
+    }
+  
+    .work-intro {
+      flex-direction: column;
+  
+      align-items: flex-start;
+  
+      padding:
+        75px 0
+        90px;
+    }
+  
+    .work-intro h2 {
+      font-size:
+        clamp(
+          70px,
+          18vw,
+          120px
+        );
+    }
+  
+    .work-intro p {
+      width: 100%;
+    }
+  
+    .project-layout {
+      grid-template-columns: 1fr;
+  
+      gap: 60px;
+    }
+  
+    .project-visual {
+      min-height: 400px;
+    }
+  
+    .project-device {
+      width: 85%;
+    }
+  
+    .project-top {
+      font-size: 8px;
+    }
+  }
+
+  .project-image {
+    width: 88%;
+    height: 88%;
+  
+    object-fit: contain;
+  
+    display: block;
+  
+    transition:
+      transform 0.8s
+      cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .project-visual:hover .project-image {
+    transform: scale(1.03);
+  }
