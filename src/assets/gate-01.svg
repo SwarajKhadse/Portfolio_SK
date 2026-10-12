@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360">
+<rect width="900" height="360" rx="8" fill="#07111f" stroke="#8fd3ff" stroke-width="4"/>
+<text x="58" y="75" fill="#7fb9e8" font-family="Arial" font-size="28" letter-spacing="7">DEPARTURE</text>
+<text x="58" y="210" fill="#eaf4ff" font-family="Arial" font-size="112" font-weight="700">GATE 01</text>
+<path d="M720 180h105m-32-32 32 32-32 32" fill="none" stroke="#6fc6ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

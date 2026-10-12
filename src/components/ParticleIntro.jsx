@@ -1,19 +1,59 @@
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import {
+  useFrame,
+} from "@react-three/fiber";
+
+import {
+  useGLTF,
+} from "@react-three/drei";
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+
 import * as THREE from "three";
+
 import gsap from "gsap";
 
-function createSphere(count, radius) {
-  const positions = new Float32Array(count * 3);
 
-  for (let i = 0; i < count; i++) {
+const AIRCRAFT_URL =
+  "/models/aircraft.glb";
+
+const PARTICLE_COUNT = 7000;
+
+
+/* =========================================================
+   SPHERE
+========================================================= */
+
+function createSphere(
+  count,
+  radius
+) {
+  const positions =
+    new Float32Array(
+      count * 3
+    );
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
     const i3 = i * 3;
 
     const y =
-      1 - (i / (count - 1)) * 2;
+      1 -
+      (i / (count - 1)) * 2;
 
     const radiusAtY =
-      Math.sqrt(1 - y * y);
+      Math.sqrt(
+        Math.max(
+          0,
+          1 - y * y
+        )
+      );
 
     const theta =
       Math.PI *
@@ -37,217 +77,636 @@ function createSphere(count, radius) {
   return positions;
 }
 
-function createScatter(count) {
-  const positions = new Float32Array(count * 3);
 
-  for (let i = 0; i < count; i++) {
+/* =========================================================
+   SCATTER
+========================================================= */
+
+function createScatter(
+  count
+) {
+  const positions =
+    new Float32Array(
+      count * 3
+    );
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
     const i3 = i * 3;
 
     positions[i3] =
-      (Math.random() - 0.5) * 14;
+      (Math.random() - 0.5) *
+      12;
 
     positions[i3 + 1] =
-      (Math.random() - 0.5) * 9;
+      (Math.random() - 0.5) *
+      8;
 
     positions[i3 + 2] =
-      (Math.random() - 0.5) * 6;
+      (Math.random() - 0.5) *
+      5;
   }
 
   return positions;
 }
 
-function createField(count) {
-  const positions = new Float32Array(count * 3);
 
-  for (let i = 0; i < count; i++) {
-    const i3 = i * 3;
+/* =========================================================
+   AIRCRAFT SURFACE SAMPLING
+   Turns the real local GLB geometry into
+   a particle target.
+========================================================= */
 
-    positions[i3] =
-      (Math.random() - 0.5) * 12;
+function sampleAircraftSurface(
+  scene,
+  count
+) {
+  scene.updateMatrixWorld(true);
 
-    positions[i3 + 1] =
-      (Math.random() - 0.5) * 7;
+  const triangles = [];
+  let totalArea = 0;
 
-    positions[i3 + 2] =
-      (Math.random() - 0.5) * 5 - 1;
-  }
-
-  return positions;
-}
-
-function ParticleIntro({ phase }) {
-  const pointsRef = useRef(null);
-
-  const formation = useRef({
-    value: 0,
-  });
-
-  const distortion = useRef({
-    value: 0,
-  });
-
-  const spread = useRef({
-    value: 0,
-  });
-
-  const mouse = useRef({
-    x: 0,
-    y: 0,
-  });
-
-  const particleData = useMemo(() => {
-    const count = 7000;
-
-    const sphere = createSphere(
-      count,
-      2.15
-    );
-
-    const scatter = createScatter(
-      count
-    );
-
-    const field = createField(
-      count
-    );
-
-    const random = new Float32Array(
-      count
-    );
-
-    for (let i = 0; i < count; i++) {
-      random[i] = Math.random();
+  scene.traverse((child) => {
+    if (
+      !child.isMesh ||
+      !child.geometry
+    ) {
+      return;
     }
 
-    return {
+    const geometry =
+      child.geometry;
+
+    const position =
+      geometry.attributes
+        ?.position;
+
+    if (!position) {
+      return;
+    }
+
+    const index =
+      geometry.index;
+
+    const matrix =
+      child.matrixWorld;
+
+    const readVertex =
+      (vertexIndex) => {
+        const v =
+          new THREE.Vector3(
+            position.getX(
+              vertexIndex
+            ),
+            position.getY(
+              vertexIndex
+            ),
+            position.getZ(
+              vertexIndex
+            )
+          );
+
+        return v.applyMatrix4(
+          matrix
+        );
+      };
+
+
+    const triangleCount =
+      index
+        ? index.count / 3
+        : position.count / 3;
+
+
+    for (
+      let i = 0;
+      i < triangleCount;
+      i++
+    ) {
+      const a =
+        index
+          ? index.getX(i * 3)
+          : i * 3;
+
+      const b =
+        index
+          ? index.getX(i * 3 + 1)
+          : i * 3 + 1;
+
+      const c =
+        index
+          ? index.getX(i * 3 + 2)
+          : i * 3 + 2;
+
+      const va =
+        readVertex(a);
+
+      const vb =
+        readVertex(b);
+
+      const vc =
+        readVertex(c);
+
+      const ab =
+        new THREE.Vector3()
+          .subVectors(
+            vb,
+            va
+          );
+
+      const ac =
+        new THREE.Vector3()
+          .subVectors(
+            vc,
+            va
+          );
+
+      const area =
+        ab
+          .cross(ac)
+          .length() *
+        0.5;
+
+      if (
+        area <= 0 ||
+        !Number.isFinite(area)
+      ) {
+        continue;
+      }
+
+      totalArea += area;
+
+      triangles.push({
+        a: va,
+        b: vb,
+        c: vc,
+        area,
+        cumulative:
+          totalArea,
+      });
+    }
+  });
+
+
+  if (
+    triangles.length === 0 ||
+    totalArea <= 0
+  ) {
+    return createSphere(
       count,
-      sphere,
-      scatter,
-      field,
-      random,
-    };
-  }, []);
+      2.0
+    );
+  }
 
-  const positions = useMemo(
-    () =>
-      particleData.scatter.slice(),
-    [particleData]
-  );
 
-  const geometry = useMemo(() => {
-    const geo =
-      new THREE.BufferGeometry();
+  /* -------------------------------------------------------
+     SAMPLE TRIANGLES BY SURFACE AREA
+  ------------------------------------------------------- */
 
-    geo.setAttribute(
-      "position",
-      new THREE.BufferAttribute(
-        positions,
-        3
-      )
+  const target =
+    new Float32Array(
+      count * 3
     );
 
-    return geo;
-  }, [positions]);
 
-  /* -----------------------------
-     SPHERE FORMATION
-  ----------------------------- */
+  const findTriangle =
+    (value) => {
+      let low = 0;
+      let high =
+        triangles.length - 1;
+
+      while (low < high) {
+        const mid =
+          Math.floor(
+            (low + high) / 2
+          );
+
+        if (
+          triangles[mid]
+            .cumulative <
+          value
+        ) {
+          low = mid + 1;
+        } else {
+          high = mid;
+        }
+      }
+
+      return triangles[low];
+    };
+
+
+  const p =
+    new THREE.Vector3();
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const triangle =
+      findTriangle(
+        Math.random() *
+        totalArea
+      );
+
+    let u =
+      Math.random();
+
+    let v =
+      Math.random();
+
+    if (
+      u + v > 1
+    ) {
+      u = 1 - u;
+      v = 1 - v;
+    }
+
+    const w =
+      1 - u - v;
+
+    p.copy(
+      triangle.a
+    )
+      .multiplyScalar(w)
+      .add(
+        triangle.b
+          .clone()
+          .multiplyScalar(u)
+      )
+      .add(
+        triangle.c
+          .clone()
+          .multiplyScalar(v)
+      );
+
+
+    const i3 = i * 3;
+
+    target[i3] =
+      p.x;
+
+    target[i3 + 1] =
+      p.y;
+
+    target[i3 + 2] =
+      p.z;
+  }
+
+
+  /* -------------------------------------------------------
+     NORMALIZE TARGET INTO A SPLASH-SIZED AIRCRAFT
+  ------------------------------------------------------- */
+
+  const box =
+    new THREE.Box3();
+
+  const point =
+    new THREE.Vector3();
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const i3 = i * 3;
+
+    point.set(
+      target[i3],
+      target[i3 + 1],
+      target[i3 + 2]
+    );
+
+    box.expandByPoint(
+      point
+    );
+  }
+
+
+  const size =
+    new THREE.Vector3();
+
+  const center =
+    new THREE.Vector3();
+
+  box.getSize(size);
+  box.getCenter(center);
+
+
+  /*
+    The aircraft is deliberately
+    wider than tall, like the
+    real model.
+  */
+
+  const scale =
+    4.2 /
+    Math.max(
+      size.x,
+      size.y,
+      size.z
+    );
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const i3 = i * 3;
+
+    target[i3] =
+      (
+        target[i3] -
+        center.x
+      ) * scale;
+
+    target[i3 + 1] =
+      (
+        target[i3 + 1] -
+        center.y
+      ) * scale;
+
+    target[i3 + 2] =
+      (
+        target[i3 + 2] -
+        center.z
+      ) * scale;
+  }
+
+
+  /*
+    Face the aircraft toward the
+    viewer in the same spirit as
+    the hero composition.
+  */
+
+  const rotation =
+    new THREE.Euler(
+      0,
+      -0.34,
+      0
+    );
+
+  const rotationMatrix =
+    new THREE.Matrix4()
+      .makeRotationFromEuler(
+        rotation
+      );
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const i3 = i * 3;
+
+    point.set(
+      target[i3],
+      target[i3 + 1],
+      target[i3 + 2]
+    );
+
+    point.applyMatrix4(
+      rotationMatrix
+    );
+
+    target[i3] =
+      point.x;
+
+    target[i3 + 1] =
+      point.y;
+
+    target[i3 + 2] =
+      point.z;
+  }
+
+
+  return target;
+}
+
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
+export default function ParticleAircraftIntro({
+  phase = "splash",
+  onAircraftReady,
+}) {
+  const pointsRef =
+    useRef(null);
+
+  const sphereValue =
+    useRef({
+      value: 0,
+    });
+
+  const planeValue =
+    useRef({
+      value: 0,
+    });
+
+  const dissolveValue =
+    useRef({
+      value: 0,
+    });
+
+  const mouse =
+    useRef({
+      x: 0,
+      y: 0,
+    });
+
+
+  const { scene } =
+    useGLTF(
+      AIRCRAFT_URL
+    );
+
+
+  const particleData =
+    useMemo(() => {
+      const sphere =
+        createSphere(
+          PARTICLE_COUNT,
+          2.25
+        );
+
+      const scatter =
+        createScatter(
+          PARTICLE_COUNT
+        );
+
+      const aircraft =
+        sampleAircraftSurface(
+          scene,
+          PARTICLE_COUNT
+        );
+
+      const random =
+        new Float32Array(
+          PARTICLE_COUNT
+        );
+
+      for (
+        let i = 0;
+        i < PARTICLE_COUNT;
+        i++
+      ) {
+        random[i] =
+          Math.random();
+      }
+
+      return {
+        sphere,
+        scatter,
+        aircraft,
+        random,
+      };
+    }, [scene]);
+
+
+  const positions =
+    useMemo(
+      () =>
+        particleData.scatter.slice(),
+      [particleData]
+    );
+
+
+  const geometry =
+    useMemo(() => {
+      const geo =
+        new THREE.BufferGeometry();
+
+      geo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(
+          positions,
+          3
+        )
+      );
+
+      return geo;
+    }, [positions]);
+
+
+  /* =======================================================
+     SPHERE BUILD
+  ======================================================= */
 
   useEffect(() => {
     const timeline =
-      gsap.timeline({
-        delay: 0.3,
-      });
+      gsap.timeline();
 
     timeline
-      .to(formation.current, {
-        value: 0.15,
-        duration: 0.8,
-        ease: "power2.out",
-      })
-      .to(formation.current, {
-        value: 1,
-        duration: 3.8,
-        ease: "expo.inOut",
-      });
+      .to(
+        sphereValue.current,
+        {
+          value: 1,
+          duration: 2.35,
+          ease: "expo.inOut",
+          delay: 0.25,
+        }
+      );
 
     return () => {
       timeline.kill();
     };
   }, []);
 
-  /* -----------------------------
-     SPHERE DISTORTION
-  ----------------------------- */
+
+  /* =======================================================
+     SPHERE → AIRCRAFT
+  ======================================================= */
 
   useEffect(() => {
-    if (phase !== "distorting") {
+    if (
+      phase !==
+      "forming-plane"
+    ) {
       return;
     }
 
     const timeline =
       gsap.timeline();
 
+
     timeline
-      .to(distortion.current, {
-        value: 1,
-        duration: 1.8,
-        ease: "power3.inOut",
-      })
       .to(
-        spread.current,
+        planeValue.current,
         {
           value: 1,
-          duration: 2.4,
-          ease: "expo.inOut",
-        },
-        "-=0.5"
+          duration: 2.25,
+          ease: "power4.inOut",
+        }
+      )
+      .to(
+        dissolveValue.current,
+        {
+          value: 1,
+          duration: 0.65,
+          ease: "power2.out",
+          onComplete:
+            onAircraftReady,
+        }
       );
 
     return () => {
       timeline.kill();
     };
-  }, [phase]);
+  }, [
+    phase,
+    onAircraftReady,
+  ]);
 
-  /* -----------------------------
+
+  /* =======================================================
      MOUSE
-  ----------------------------- */
+  ======================================================= */
 
   useEffect(() => {
-    const handleMouseMove = (
-      event
-    ) => {
-      mouse.current.x =
-        (event.clientX /
-          window.innerWidth -
-          0.5) *
-        2;
+    const handleMouse =
+      (event) => {
+        mouse.current.x =
+          (
+            event.clientX /
+              window.innerWidth -
+            0.5
+          ) * 2;
 
-      mouse.current.y =
-        -(
-          event.clientY /
-            window.innerHeight -
-          0.5
-        ) *
-        2;
-    };
+        mouse.current.y =
+          -(
+            event.clientY /
+              window.innerHeight -
+            0.5
+          ) * 2;
+      };
 
     window.addEventListener(
       "mousemove",
-      handleMouseMove
+      handleMouse
     );
 
     return () => {
       window.removeEventListener(
         "mousemove",
-        handleMouseMove
+        handleMouse
       );
     };
   }, []);
 
-  /* -----------------------------
-     ANIMATION LOOP
-  ----------------------------- */
+
+  /* =======================================================
+     ANIMATION
+  ======================================================= */
 
   useFrame((state) => {
     if (!pointsRef.current) {
@@ -258,20 +717,22 @@ function ParticleIntro({ phase }) {
       state.clock.elapsedTime;
 
     const current =
-      geometry.attributes.position.array;
+      geometry.attributes
+        .position.array;
 
-    const formationValue =
-      formation.current.value;
+    const sphere =
+      sphereValue.current.value;
 
-    const distortionValue =
-      distortion.current.value;
+    const plane =
+      planeValue.current.value;
 
-    const spreadValue =
-      spread.current.value;
+    const dissolve =
+      dissolveValue.current.value;
+
 
     for (
       let i = 0;
-      i < particleData.count;
+      i < PARTICLE_COUNT;
       i++
     ) {
       const i3 = i * 3;
@@ -279,194 +740,281 @@ function ParticleIntro({ phase }) {
       const random =
         particleData.random[i];
 
-      /* SCATTER → SPHERE */
+
+      /* --------------------------------------------------
+         SCATTER → SPHERE
+      -------------------------------------------------- */
 
       let x =
         THREE.MathUtils.lerp(
           particleData.scatter[i3],
           particleData.sphere[i3],
-          formationValue
+          sphere
         );
 
       let y =
         THREE.MathUtils.lerp(
           particleData.scatter[i3 + 1],
           particleData.sphere[i3 + 1],
-          formationValue
+          sphere
         );
 
       let z =
         THREE.MathUtils.lerp(
           particleData.scatter[i3 + 2],
           particleData.sphere[i3 + 2],
-          formationValue
+          sphere
         );
 
-      /* NATURAL MOTION */
+
+      /* --------------------------------------------------
+         NATURAL SPHERE MOTION
+      -------------------------------------------------- */
+
+      const sphereBreath =
+        (
+          1 -
+          plane
+        ) *
+        (
+          0.012 +
+          Math.sin(
+            time *
+              1.25 +
+              random * 25
+          ) *
+          0.008
+        );
 
       x +=
         Math.sin(
-          time * 2 +
-          random * 30
-        ) *
-        0.015;
-
-      y +=
-        Math.cos(
-          time * 1.7 +
+          time * 1.8 +
           random * 25
         ) *
-        0.015;
-
-      /* DISTORTION */
-
-      if (distortionValue > 0) {
-        const noise =
-          Math.sin(
-            time * 2 +
-            random * 20
-          );
-
-        const noise2 =
-          Math.cos(
-            time * 1.5 +
-            random * 25
-          );
-
-        x +=
-          noise *
-          distortionValue *
-          1.3;
-
-        y +=
-          noise2 *
-          distortionValue *
-          1.0;
-
-        z +=
-          Math.sin(
-            time * 2.4 +
-            random * 15
-          ) *
-          distortionValue *
-          1.5;
-      }
-
-      /* SPHERE → FIELD */
-
-      x =
-        THREE.MathUtils.lerp(
-          x,
-          particleData.field[i3],
-          spreadValue
-        );
-
-      y =
-        THREE.MathUtils.lerp(
-          y,
-          particleData.field[i3 + 1],
-          spreadValue
-        );
-
-      z =
-        THREE.MathUtils.lerp(
-          z,
-          particleData.field[i3 + 2],
-          spreadValue
-        );
-
-      /* FIELD MOVEMENT */
-
-      const movement =
-        0.008 +
-        spreadValue * 0.01;
-
-      x +=
-        Math.sin(
-          time +
-          random * 20
-        ) *
-        movement;
+        sphereBreath;
 
       y +=
         Math.cos(
-          time * 1.3 +
-          random * 30
+          time * 1.55 +
+          random * 21
         ) *
-        movement;
+        sphereBreath;
 
-      /* SMOOTH MOVEMENT */
+      z +=
+        Math.sin(
+          time * 1.3 +
+          random * 27
+        ) *
+        sphereBreath;
+
+
+      /* --------------------------------------------------
+         SPHERE → AIRCRAFT
+      -------------------------------------------------- */
+
+      const planeTarget =
+        plane;
+
+      /*
+        Slight radial compression while
+        the sphere starts becoming a plane.
+      */
+
+      const compressedX =
+        x *
+        (
+          1 +
+          planeTarget *
+          0.34
+        );
+
+      const compressedY =
+        y *
+        (
+          1 -
+          planeTarget *
+          0.22
+        );
+
+      const compressedZ =
+        z *
+        (
+          1 -
+          planeTarget *
+          0.10
+        );
+
+
+      const targetX =
+        THREE.MathUtils.lerp(
+          compressedX,
+          particleData.aircraft[i3],
+          planeTarget
+        );
+
+      const targetY =
+        THREE.MathUtils.lerp(
+          compressedY,
+          particleData.aircraft[i3 + 1],
+          planeTarget
+        );
+
+      const targetZ =
+        THREE.MathUtils.lerp(
+          compressedZ,
+          particleData.aircraft[i3 + 2],
+          planeTarget
+        );
+
+
+      /*
+        The plane formation gets
+        a small forward sweep,
+        giving a "coming together"
+        feeling instead of a hard morph.
+      */
+
+      const sweep =
+        Math.sin(
+          (1 - planeTarget) *
+          Math.PI
+        ) *
+        0.18;
+
+      const finalX =
+        targetX;
+
+      const finalY =
+        targetY;
+
+      const finalZ =
+        targetZ +
+        sweep *
+        (
+          0.3 +
+          random
+        );
+
+
+      /* --------------------------------------------------
+         DISSOLVE / REDUCE PARTICLES
+      -------------------------------------------------- */
+
+      const motion =
+        1 -
+        dissolve *
+        0.92;
+
+      const smooth =
+        phase ===
+        "forming-plane"
+          ? 0.075
+          : 0.05;
+
 
       current[i3] +=
-        (x -
-          current[i3]) *
-        0.06;
+        (
+          finalX -
+          current[i3]
+        ) *
+        smooth *
+        motion;
 
       current[i3 + 1] +=
-        (y -
-          current[i3 + 1]) *
-        0.06;
+        (
+          finalY -
+          current[i3 + 1]
+        ) *
+        smooth *
+        motion;
 
       current[i3 + 2] +=
-        (z -
-          current[i3 + 2]) *
-        0.06;
+        (
+          finalZ -
+          current[i3 + 2]
+        ) *
+        smooth *
+        motion;
     }
 
-    geometry.attributes.position.needsUpdate =
-      true;
 
-    /* ROTATION */
+    geometry.attributes
+      .position
+      .needsUpdate = true;
 
-    pointsRef.current.rotation.y +=
-      phase === "distorting"
-        ? 0.004
-        : 0.0018;
+
+    /* ----------------------------------------------------
+       ROTATION
+    ---------------------------------------------------- */
+
+    pointsRef.current.rotation.y =
+      THREE.MathUtils.lerp(
+        pointsRef.current.rotation.y,
+        plane > 0.85
+          ? -0.15
+          : time * 0.12,
+        0.025
+      );
+
 
     pointsRef.current.rotation.x =
-      Math.sin(time * 0.3) *
-      0.05;
+      Math.sin(
+        time * 0.22
+      ) *
+      0.035;
 
-    /* MOUSE */
 
     pointsRef.current.rotation.y +=
       mouse.current.x *
-      0.0005;
+      0.002;
+
 
     pointsRef.current.rotation.x +=
       mouse.current.y *
-      0.0003;
+      0.001;
 
-    /* BREATHING */
 
-    const breathing =
+    /* ----------------------------------------------------
+       SCALE
+    ---------------------------------------------------- */
+
+    const scale =
       1 +
-      Math.sin(time * 1.2) *
-      0.015;
+      Math.sin(
+        time * 1.1
+      ) *
+      0.01 *
+      (1 - plane);
 
     pointsRef.current.scale.setScalar(
-      breathing
+      scale
     );
   });
+
 
   return (
     <points
       ref={pointsRef}
       geometry={geometry}
     >
+
       <pointsMaterial
         color="#ffffff"
-        size={0.018}
+        size={0.016}
         sizeAttenuation
         transparent
-        opacity={0.92}
+        opacity={0.82}
         depthWrite={false}
         blending={
           THREE.AdditiveBlending
         }
       />
+
     </points>
   );
 }
 
-export default ParticleIntro;
+
+useGLTF.preload(
+  AIRCRAFT_URL
+);

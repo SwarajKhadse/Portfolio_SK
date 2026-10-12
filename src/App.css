@@ -3,948 +3,277 @@
 }
 
 html {
-  background: #8f000d;
+  scroll-behavior: auto !important;
+  background: #eef1f3;
+}
+
+body,
+#root {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
 }
 
 body {
-  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #eef1f3;
+  color: #243944;
+  font-family: Arial, Helvetica, sans-serif;
+}
 
-  background: #8f000d;
+button,
+a {
+  font: inherit;
+}
 
-  color: #ffffff;
-
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
+body.site-scroll-locked {
   overflow: hidden;
 }
 
-button {
-  font-family: inherit;
-}
+/* =========================================================
+   CONTINUOUS AIRPORT STORY
+========================================================= */
 
-/* =====================================
-   APP / VIEW SYSTEM
-===================================== */
-
-.app {
+.app.continuous-app {
   position: relative;
-
   width: 100%;
-  height: 100vh;
-
-  overflow: hidden;
-
-  background: #8f000d;
+  min-height: 100vh;
+  overflow: visible;
+  background: #eef1f3;
 }
 
-/* =====================================
-   FIXED HEADER
-===================================== */
-
-.top-bar {
-  position: fixed;
-
-  top: 0;
-  left: 0;
-  right: 0;
-
+.journey-flow {
+  --journey-progress: 0;
+  position: relative;
   width: 100%;
+  height: 360svh;
+  background: transparent;
+}
 
-  padding:
-    32px 42px;
+.journey-canvas-sticky,
+.journey-story-sticky {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100svh;
+  margin-bottom: -100svh;
+}
 
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  z-index: 100;
-
+.journey-canvas-sticky {
+  z-index: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
-.logo {
-  font-size: 23px;
-
-  font-weight: 900;
-
-  letter-spacing: -1.5px;
+.journey-story-sticky {
+  z-index: 10;
+  pointer-events: none;
 }
 
-.logo span {
-  opacity: 0.55;
-}
-
-.top-right {
-  font-size: 9px;
-
-  letter-spacing: 3px;
-
-  opacity: 0.6;
-}
-
-/* =====================================
-   HERO VIEW
-===================================== */
-
-.hero-view {
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-  height: 100vh;
-
-  background: #8f000d;
-
-  z-index: 2;
-
-  opacity: 1;
-
-  visibility: visible;
-
-  transition:
-    opacity 0.9s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    ),
-
-    transform 1s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    );
-}
-
-/* =====================================
-   PARTICLE CANVAS
-===================================== */
-
-.particle-canvas {
+.journey-canvas-sticky canvas,
+.journey-canvas {
   position: absolute !important;
-
-  inset: 0;
-
+  inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-
-  z-index: 1;
-}
-
-/* =====================================
-   VIGNETTE
-===================================== */
-
-.vignette {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 2;
-
-  pointer-events: none;
-
-  background:
-    radial-gradient(
-      circle at center,
-      transparent 25%,
-      rgba(0, 0, 0, 0.08) 65%,
-      rgba(0, 0, 0, 0.28) 100%
-    );
-}
-
-/* =====================================
-   SPLASH
-===================================== */
-
-.splash-ui {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 5;
-
-  pointer-events: none;
-}
-
-.splash-side-text {
-  position: absolute;
-
-  top: 50%;
-  left: 42px;
-
-  transform:
-    translateY(-50%);
-
-  font-size: 8px;
-
-  line-height: 1.7;
-
-  letter-spacing: 3px;
-
-  opacity: 0.55;
-}
-
-.splash-center {
-  position: absolute;
-
-  left: 50%;
-  bottom: 72px;
-
-  transform:
-    translateX(-50%);
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-}
-
-.splash-index {
-  margin-bottom: 22px;
-
-  font-size: 9px;
-
-  letter-spacing: 4px;
-
-  opacity: 0.5;
-}
-
-.enter-button {
-  display: flex;
-
-  align-items: center;
-
-  gap: 18px;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #ffffff;
-
-  cursor: pointer;
-
-  pointer-events: auto;
-
-  padding: 0;
-
-  font-size: 10px;
-
-  font-weight: 600;
-
-  letter-spacing: 4px;
-}
-
-.enter-circle {
-  width: 38px;
-  height: 38px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  border:
-    1px solid
-    rgba(255, 255, 255, 0.55);
-
-  border-radius: 50%;
-
-  font-size: 16px;
-
-  transition:
-    transform 0.35s ease,
-    background 0.35s ease;
-}
-
-.enter-button:hover
-.enter-circle {
-  transform:
-    translateY(5px);
-
-  background:
-    rgba(255, 255, 255, 0.1);
-}
-
-.touch-hint {
-  margin-top: 15px;
-
-  font-size: 7px;
-
-  letter-spacing: 3px;
-
-  opacity: 0.4;
-}
-
-/* =====================================
-   TRANSITION UI
-===================================== */
-
-.transition-ui {
-  position: absolute;
-
-  top: 50%;
-  left: 50%;
-
-  transform:
-    translate(-50%, -50%);
-
-  z-index: 8;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  gap: 16px;
-
-  font-size: 9px;
-
-  letter-spacing: 6px;
-
-  pointer-events: none;
-}
-
-.transition-line {
-  width: 90px;
-
-  height: 1px;
-
-  background:
-    rgba(255, 255, 255, 0.25);
-
-  overflow: hidden;
-}
-
-.transition-line span {
   display: block;
-
-  width: 100%;
-  height: 100%;
-
-  background: #ffffff;
-
-  transform-origin: left;
-
-  animation:
-    loadingLine 3s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    )
-    forwards;
-}
-
-@keyframes loadingLine {
-
-  from {
-    transform:
-      scaleX(0);
-  }
-
-  to {
-    transform:
-      scaleX(1);
-  }
-
-}
-
-/* =====================================
-   HERO CONTENT
-===================================== */
-
-.hero-content {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 6;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  text-align: center;
-
-  pointer-events: none;
-
-  opacity: 0;
-
-  animation:
-    heroReveal
-    1.4s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    )
-    forwards;
-}
-
-.hero-content h1 {
-  margin: 0;
-
-  font-size:
-    clamp(
-      72px,
-      13vw,
-      190px
-    );
-
-  line-height: 0.78;
-
-  font-weight: 900;
-
-  letter-spacing: -0.09em;
-}
-
-.hero-eyebrow {
-  margin-bottom: 26px;
-
-  font-size: 10px;
-
-  font-weight: 600;
-
-  letter-spacing: 5px;
-
-  opacity: 0.72;
-}
-
-.hero-eyebrow span {
-  margin: 0 10px;
-
-  opacity: 0.4;
-}
-
-.hero-content p {
-  margin:
-    32px auto 0;
-
-  font-size: 14px;
-
-  line-height: 1.7;
-
-  opacity: 0.7;
-}
-
-.hero-scroll {
-  margin:
-    48px auto 0;
-
-  padding: 0;
-
-  border: 0;
-
-  background: transparent;
-
-  color: #ffffff;
-
-  cursor: pointer;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 15px;
-
-  font-size: 9px;
-
-  letter-spacing: 4px;
-
-  opacity: 0.62;
-}
-
-.hero-scroll span {
-  font-size: 18px;
-
-  transition:
-    transform 0.3s ease;
-}
-
-.hero-scroll:hover span {
-  transform:
-    translateY(5px);
-}
-
-@keyframes heroReveal {
-
-  from {
-    opacity: 0;
-
-    transform:
-      translateY(30px)
-      scale(0.98);
-
-    filter:
-      blur(10px);
-  }
-
-  to {
-    opacity: 1;
-
-    transform:
-      translateY(0)
-      scale(1);
-
-    filter:
-      blur(0);
-  }
-
-}
-
-/* =====================================
-   HERO → ABOUT TRANSITION
-===================================== */
-
-.app.is-transitioning
-.hero-view {
-  opacity: 0;
-
-  transform:
-    scale(0.985);
-
-  transition:
-    opacity 0.8s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    ),
-
-    transform 1s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    );
-}
-
-.app.is-transitioning {
-  background:
-    #8f000d;
-
-  animation:
-    redToBlack
-    1s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    )
-    forwards;
-}
-
-@keyframes redToBlack {
-
-  0% {
-    background:
-      #8f000d;
-  }
-
-  55% {
-    background:
-      #420008;
-  }
-
-  100% {
-    background:
-      #08090b;
-  }
-
-}
-
-/* =====================================
-   ABOUT VIEW
-===================================== */
-
-.about-view {
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-  height: 100vh;
-
-  z-index: 3;
-
-  opacity: 0;
-
-  visibility: hidden;
-
-  background:
-    #08090b;
-
-  transition:
-    opacity 0.9s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    );
-}
-
-.about-view.active {
-  opacity: 1;
-
-  visibility: visible;
-}
-
-/* =====================================
-   BOTTOM INFO
-===================================== */
-
-.bottom-left,
-.bottom-right {
-  position: fixed;
-
-  bottom: 30px;
-
-  z-index: 110;
-
-  font-size: 7px;
-
-  letter-spacing: 3px;
-
-  opacity: 0.48;
-
   pointer-events: none;
 }
 
-.bottom-left {
-  left: 42px;
-}
-
-.bottom-right {
-  right: 42px;
-}
-
-/* =====================================
-   MOBILE
-===================================== */
-
-@media (max-width: 800px) {
-
-  .top-bar {
-    padding:
-      25px 22px;
-  }
-
-  .top-right {
-    display: none;
-  }
-
-  .splash-side-text {
-    left: 22px;
-  }
-
-  .splash-center {
-    bottom: 70px;
-  }
-
-  .bottom-left {
-    left: 22px;
-  }
-
-  .bottom-right {
-    display: none;
-  }
-
-  .hero-content h1 {
-    font-size:
-      clamp(
-        58px,
-        18vw,
-        108px
-      );
-  }
-
-  .hero-eyebrow {
-    font-size: 8px;
-
-    letter-spacing: 4px;
-  }
-
-  .hero-content p {
-    padding:
-      0 24px;
-
-    font-size: 12px;
-  }
-}
-
-
-/* =====================================
-   FULL SCREEN VIEW SYSTEM
-===================================== */
-
-.app {
+.work-view {
   position: relative;
-
   width: 100%;
-  height: 100vh;
-
-  overflow: hidden;
-
-  background: #8f000d;
-}
-
-
-/* =====================================
-   ALL VIEWS
-===================================== */
-
-.hero-view,
-.about-view,
-.work-view {
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-  height: 100vh;
-
-  opacity: 0;
-
-  visibility: hidden;
-
-  transform: scale(1.015);
-
-  transition:
-    opacity 0.9s
-      cubic-bezier(
-        0.16,
-        1,
-        0.3,
-        1
-      ),
-    transform 1.1s
-      cubic-bezier(
-        0.16,
-        1,
-        0.3,
-        1
-      );
-
-  overflow: hidden;
-}
-
-
-/* =====================================
-   ACTIVE VIEW
-===================================== */
-
-.hero-view.active,
-.about-view.active,
-.work-view.active {
-  opacity: 1;
-
-  visibility: visible;
-
-  transform: scale(1);
-}
-
-
-/* =====================================
-   VIEW ORDER
-===================================== */
-
-.hero-view {
-  z-index: 2;
-}
-
-.about-view {
-  z-index: 3;
-
-  background: #08090b;
-}
-
-.work-view {
-  z-index: 4;
-
+  min-height: 100svh;
+  z-index: 20;
   background: #070000;
-
-  overflow-y: auto;
+  overflow: visible;
 }
 
-
-/* =====================================
-   TRANSITION
-===================================== */
-
-.app.is-transitioning {
-  background: #8f000d;
-
-  animation:
-    redToBlack
-    1s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    )
-    forwards;
-}
-
-@keyframes redToBlack {
-
-  0% {
-    background: #8f000d;
-  }
-
-  50% {
-    background: #3d0006;
-  }
-
-  100% {
-    background: #08090b;
-  }
-
-}
-
-
-/* =====================================
-   HERO FADE
-===================================== */
-
-.app.is-transitioning
-.hero-view {
-  opacity: 0;
-
-  transform: scale(0.985);
-}
-
-
-/* =====================================
-   ABOUT / WORK
-===================================== */
-
-.about-view,
-.work-view {
-  pointer-events: none;
-}
-
-.about-view.active,
-.work-view.active {
-  pointer-events: auto;
-}
-
-
-/* =====================================
-   FIXED HEADER
-===================================== */
-
-.top-bar {
-  position: fixed;
-
-  top: 0;
+.work-view::before {
+  content: "";
+  position: absolute;
+  top: -14vh;
   left: 0;
   right: 0;
-
-  z-index: 100;
-
+  height: 14vh;
   pointer-events: none;
+  background: linear-gradient(180deg, rgba(7, 0, 0, 0), #070000 92%);
 }
 
-
-/* =====================================
-   MOBILE
-===================================== */
-
-@media (max-width: 800px) {
-
-  .hero-view,
-  .about-view,
-  .work-view {
-    height: 100svh;
-  }
-
-}
-
-.hero-view,
-.about-view,
-.work-view,
 .experience-view {
-  position: absolute;
-  inset: 0;
-
+  position: relative;
   width: 100%;
-  height: 100vh;
-
-  opacity: 0;
-  visibility: hidden;
-
-  transform: scale(1.015);
-
-  transition:
-    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 100svh;
+  z-index: 21;
+  background: #070707;
 }
 
-.hero-view.active,
-.about-view.active,
-.work-view.active,
-.experience-view.active {
-  opacity: 1;
-  visibility: visible;
-  transform: scale(1);
-}
+/* =========================================================
+   CASE STUDY OVERLAY
+========================================================= */
+
 .case-study-view {
   position: fixed;
-
   inset: 0;
-
   width: 100%;
-  height: 100vh;
-
+  height: 100svh;
   z-index: 200;
-
   background: #080808;
-
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-
   overflow-y: auto;
   overflow-x: hidden;
-
-  transition:
-    opacity 0.8s
-    cubic-bezier(
-      0.16,
-      1,
-      0.3,
-      1
-    );
+  transition: opacity 0.35s ease;
 }
 
 .case-study-view.active {
   opacity: 1;
-
   visibility: visible;
-
   pointer-events: auto;
+}
+
+/* =========================================================
+   MODERN CURSOR
+========================================================= */
+
+.has-custom-cursor,
+.has-custom-cursor body,
+.has-custom-cursor button,
+.has-custom-cursor a {
+  cursor: none !important;
+}
+
+.cursor-dot,
+.cursor-ring,
+.cursor-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: block;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate3d(-100px, -100px, 0);
+}
+
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #ffffff;
+  mix-blend-mode: difference;
+}
+
+.cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  mix-blend-mode: difference;
+  transition:
+    width 0.25s ease,
+    height 0.25s ease,
+    margin 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.cursor-ring.is-hovering {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 1);
+}
+
+.cursor-ring.is-pressed {
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+}
+
+.cursor-label {
+  opacity: 0;
+  margin: 12px 0 0 12px;
+  color: #ffffff;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  mix-blend-mode: difference;
+  transition: opacity 0.2s ease;
+}
+
+.cursor-label.is-visible {
+  opacity: 1;
+}
+
+/* =========================================================
+   AUDIO CONTROL
+========================================================= */
+
+.audio-toggle {
+  position: fixed;
+  right: 28px;
+  bottom: 24px;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid rgba(36, 57, 68, 0.18);
+  border-radius: 999px;
+  background: rgba(245, 248, 249, 0.78);
+  color: #304550;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+}
+
+.audio-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+
+.audio-bars i {
+  display: block;
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
+.audio-toggle.is-playing .audio-bars i {
+  animation: audioBar 900ms ease-in-out infinite alternate;
+}
+
+.audio-toggle.is-playing .audio-bars i:nth-child(2) {
+  animation-delay: -260ms;
+}
+
+.audio-toggle.is-playing .audio-bars i:nth-child(3) {
+  animation-delay: -520ms;
+}
+
+@keyframes audioBar {
+  from { transform: scaleY(0.65); }
+  to { transform: scaleY(1.45); }
+}
+
+@media (max-width: 800px) {
+  .journey-flow {
+    height: 360svh;
+  }
+
+  .audio-toggle {
+    right: 16px;
+    bottom: 16px;
+  }
 }
