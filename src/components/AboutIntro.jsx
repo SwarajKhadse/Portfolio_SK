@@ -53,11 +53,11 @@ function AboutIntro({ active }) {
           </div>
 
           <h2>
-            DESIGNING
+            Designing
             <br />
-            DIGITAL
+            Digital
             <br />
-            EXPERIENCES.
+            Experiences.
           </h2>
 
           <p>
@@ -73,7 +73,7 @@ function AboutIntro({ active }) {
           </p>
 
           <div className="about-role">
-            PRODUCT DESIGNER
+            Product Designer
             <span>×</span>
             UI / UX
           </div>
@@ -114,11 +114,11 @@ function AboutIntro({ active }) {
       <div className="about-footer">
 
         <span>
-          BASED IN INDIA
+          Based In India
         </span>
 
         <span>
-          CHAPTER II
+          Chapter II
         </span>
 
       </div>

@@ -412,18 +412,18 @@ export default function AmbientAudio({
         isPlaying ? "is-playing" : ""
       }`}
       data-cursor="interactive"
-      data-cursor-label="SOUND"
+      data-cursor-label="Sound"
       onClick={toggle}
       aria-pressed={isPlaying}
       aria-label={
         isPlaying
-          ? "Turn airport ambience off"
-          : "Turn airport ambience on"
+          ? "Turn Airport Ambience Off"
+          : "Turn Airport Ambience On"
       }
       title={
         unavailable
-          ? "Audio is not supported in this browser"
-          : "Toggle airport ambience"
+          ? "Audio Is Not Supported In This Browser"
+          : "Toggle Airport Ambience"
       }
     >
       <span className="audio-bars" aria-hidden="true">
@@ -433,10 +433,10 @@ export default function AmbientAudio({
       </span>
 
       {unavailable
-        ? "AUDIO N/A"
+        ? "Audio N/A"
         : isPlaying
-          ? "SOUND ON"
-          : "SOUND OFF"}
+          ? "Sound On"
+          : "Sound Off"}
     </button>
   );
 }

@@ -5,7 +5,7 @@
     height: 100svh;
     overflow: hidden;
     background: transparent;
-    color: #253b45;
+    color: #21166F;
     isolation: isolate;
   }
   
@@ -24,8 +24,8 @@
   }
   
   .taxi-kicker {
-    color: #5c7885;
-    font-size: 11px;
+    color: #72739F;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 3.5px;
   }
@@ -34,7 +34,7 @@
     width: 43px;
     height: 1.5px;
     margin-top: 18px;
-    background: #607d89;
+    background: #72739F;
   }
   
   .taxi-label {
@@ -44,13 +44,13 @@
     font-weight: 300;
     line-height: 0.88;
     letter-spacing: -4px;
-    color: #263d47;
+    color: #21166F;
   }
   
   .taxi-copy p {
     margin: 30px 0 0;
-    color: #607986;
-    font-size: 11px;
+    color: #72739F;
+    font-size: 14px;
     line-height: 1.7;
     letter-spacing: 1.6px;
   }
@@ -63,8 +63,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #657f8a;
-    font-size: 8px;
+    color: #72739F;
+    font-size: 14px;
     letter-spacing: 3px;
   }
   
@@ -102,20 +102,20 @@
   }
   
   .taxi-side-note span {
-    color: #2c4854;
+    color: #21166F;
     font-size: 28px;
     font-weight: 300;
   }
   
   .taxi-side-note strong {
-    color: #526d79;
-    font-size: 9px;
+    color: #72739F;
+    font-size: 14px;
     letter-spacing: 2.8px;
   }
   
   .taxi-side-note small {
-    color: #81939a;
-    font-size: 7px;
+    color: #8586B0;
+    font-size: 14px;
     letter-spacing: 2px;
   }
   
@@ -127,8 +127,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #67808b;
-    font-size: 7px;
+    color: #72739F;
+    font-size: 14px;
     letter-spacing: 2.8px;
   }
   

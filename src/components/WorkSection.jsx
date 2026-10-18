@@ -4,57 +4,57 @@ function WorkSection({ onOpenCaseStudy }) {
   return (
     <section className="work-section">
       <div className="work-header">
-        <span className="work-label">selected work</span>
-        <span className="work-year">product · systems · digital</span>
+        <span className="work-label">Selected Work</span>
+        <span className="work-year">Product · Systems · Digital</span>
       </div>
 
       <div className="work-intro">
         <div>
-          <span className="work-eyebrow">a few things i’ve helped shape</span>
-          <h2>real work.<br /><span>real impact.</span></h2>
+          <span className="work-eyebrow">A Few Things I’ve Helped Shape</span>
+          <h2>Real Work.<br /><span>Real Impact.</span></h2>
         </div>
-        <p>three projects. different problems. one focus: making complex digital experiences easier to use.</p>
+        <p>Three projects. Different problems. One focus: making complex digital experiences easier to use.</p>
       </div>
 
       <div className="project-grid">
         <article className="project-card project-card--hrms">
-          <div className="project-card-topline"><span>01</span><span>enterprise product</span></div>
+          <div className="project-card-topline"><span>01</span><span>Enterprise Product</span></div>
           <div className="project-art project-art--hrms" aria-hidden="true">
-            <span className="project-art-overline">employee lifecycle</span>
+            <span className="project-art-overline">Enterprise · People Systems</span>
             <strong>eHRMS</strong>
-            <span className="project-art-route"><i /><i /><i /><i /></span>
+            <span className="project-art-caption">Employee Lifecycle</span>
           </div>
           <div className="project-card-copy">
-            <h3>eHRMS platform</h3>
-            <p>enterprise human resource management across employee lifecycle workflows.</p>
-            <div className="project-card-tags"><span>product design</span><span>design systems</span><span>enterprise ux</span></div>
+            <h3>eHRMS Platform</h3>
+            <p>Enterprise human resource management across employee lifecycle workflows.</p>
+            <div className="project-card-tags"><span>Product Design</span><span>Design Systems</span><span>Enterprise UX</span></div>
           </div>
         </article>
 
         <article className="project-card project-card--ekameva">
-          <div className="project-card-topline"><span>02</span><span>single sign-on</span></div>
+          <div className="project-card-topline"><span>02</span><span>Single Sign-On</span></div>
           <div className="project-image-wrap">
-            <img src="/ekameva.png" alt="ekameva single sign-on application interface" />
+            <img src="/ekameva-portfolio.webp" alt="Ekameva Single Sign-On application interface" />
           </div>
           <div className="project-card-copy">
-            <h3>ekameva sso</h3>
-            <p>a unified access experience for multiple enterprise banking applications.</p>
-            <div className="project-card-tags"><span>ux / ui</span><span>workflow design</span></div>
-            <button type="button" className="project-button" onClick={onOpenCaseStudy}>view case study <span aria-hidden="true">↗</span></button>
+            <h3>Ekameva SSO</h3>
+            <p>A unified access experience for multiple enterprise banking applications.</p>
+            <div className="project-card-tags"><span>UX / UI</span><span>Workflow Design</span></div>
+            <button type="button" className="project-button" onClick={onOpenCaseStudy}>View Case Study <span aria-hidden="true">↗</span></button>
           </div>
         </article>
 
         <article className="project-card project-card--udgam">
-          <div className="project-card-topline"><span>03</span><span>digital portal</span></div>
+          <div className="project-card-topline"><span>03</span><span>Digital Portal</span></div>
           <div className="project-art project-art--udgam" aria-hidden="true">
-            <span className="project-art-overline">learning · discovery · access</span>
-            <strong>udgam<span>.</span></strong>
-            <span className="project-art-route"><i /><i /><i /><i /></span>
+            <span className="project-art-overline">Information · Discovery · Access</span>
+            <strong>UDGAM<span>.</span></strong>
+            <span className="project-art-caption">Unclaimed Deposits Portal</span>
           </div>
           <div className="project-card-copy">
-            <h3>udgam portal</h3>
-            <p>a clearer portal experience for finding information across a complex service.</p>
-            <div className="project-card-tags"><span>information architecture</span><span>accessibility</span></div>
+            <h3>UDGAM Portal</h3>
+            <p>A clearer portal experience for finding information across a complex service.</p>
+            <div className="project-card-tags"><span>Information Architecture</span><span>Accessibility</span></div>
           </div>
         </article>
       </div>

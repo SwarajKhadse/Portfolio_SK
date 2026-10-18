@@ -1,17 +1,20 @@
 :root {
   color-scheme: light;
-  --surface: #f6f9ff;
-  --surface-soft: #eaf4ff;
-  --surface-blue: #e5f1ff;
+  --surface: #F0F1FF;
+  --primary: #21166F;
+  --secondary: #C4C6E6;
+  --accent: #FF9364;
+  --surface-soft: #E9EAFF;
+  --surface-blue: #E1E3FB;
   --surface-white: #ffffff;
-  --ink: #102d54;
-  --ink-soft: #385879;
-  --muted: #597694;
-  --line: rgba(16, 45, 84, 0.13);
-  --blue: #1477f8;
-  --coral: #ff654d;
+  --ink: var(--primary);
+  --ink-soft: #6D6D9A;
+  --muted: #72739F;
+  --line: rgba(33, 22, 111, 0.13);
+  --blue: var(--secondary);
+  --coral: var(--accent);
   --radius-lg: 22px;
-  --shadow-soft: 0 20px 70px rgba(37, 69, 91, 0.08);
+  --shadow-soft: 0 20px 70px rgba(33, 22, 111, 0.08);
 }
 
 * {
@@ -36,7 +39,6 @@ body {
   overflow-y: auto;
   background: var(--surface);
   color: var(--ink);
-  text-transform: lowercase;
   font-family: "Inter", "Aptos", "Segoe UI", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -56,7 +58,6 @@ button {
 }
 
 .app.continuous-app :is(h1, h2, h3, h4, p, span, small, button, a, label, strong, em, li, dt, dd) {
-  text-transform: lowercase !important;
 }
 
 body.site-scroll-locked {
@@ -64,7 +65,6 @@ body.site-scroll-locked {
 }
 
 .app.continuous-app {
-  text-transform: lowercase;
   position: relative;
   width: 100%;
   min-height: 100vh;
@@ -94,6 +94,8 @@ body.site-scroll-locked {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Keep a deliberate sky treatment visible while WebGL initializes. */
+  background: linear-gradient(180deg, #b9e1ff 0%, #e3f2ff 56%, #F2F2FF 100%);
 }
 
 .journey-story-sticky {
@@ -152,7 +154,6 @@ body.site-scroll-locked {
 }
 
 .case-study-view {
-  text-transform: lowercase;
   position: fixed;
   inset: 0;
   z-index: 200;
@@ -183,14 +184,14 @@ body.site-scroll-locked {
   align-items: center;
   gap: 9px;
   padding: 10px 13px;
-  border: 1px solid rgba(16, 45, 84, 0.15);
+  border: 1px solid rgba(33, 22, 111, 0.15);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
   color: var(--ink);
-  box-shadow: 0 5px 24px rgba(16, 45, 84, 0.06);
+  box-shadow: 0 5px 24px rgba(33, 22, 111, 0.06);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  font-size: 9px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.1px;
   cursor: pointer;
@@ -233,7 +234,7 @@ body.site-scroll-locked {
   background: linear-gradient(135deg, #d9ecff, #b9dcff);
   color: var(--ink);
   text-align: center;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.6px;
 }
 

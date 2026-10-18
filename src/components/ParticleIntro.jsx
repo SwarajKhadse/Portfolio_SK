@@ -51,10 +51,11 @@ function prepareAircraft(source) {
   return { model, animatedMaterials };
 }
 
-export default function ParticleIntro({ phase = "splash" }) {
+export default function ParticleIntro({ phase = "splash", onPlaneVisible }) {
   const aircraftGroupRef = useRef(null);
   const progressRef = useRef({ value: 0 });
   const reducedMotionRef = useRef(false);
+  const visibilityReportedRef = useRef(false);
 
   const { scene } = useGLTF(AIRCRAFT_URL);
   const aircraft = useMemo(() => prepareAircraft(scene), [scene]);
@@ -96,6 +97,11 @@ export default function ParticleIntro({ phase = "splash" }) {
     const amount = THREE.MathUtils.clamp(progressRef.current.value, 0, 1);
     const reveal = THREE.MathUtils.smoothstep(amount, 0.02, 0.9);
     const time = reducedMotionRef.current ? 0 : clock.elapsedTime;
+
+    if (reveal > 0.32 && !visibilityReportedRef.current) {
+      visibilityReportedRef.current = true;
+      onPlaneVisible?.();
+    }
 
     if (aircraftGroupRef.current) {
       aircraftGroupRef.current.scale.setScalar(0.025 + reveal * 0.975);

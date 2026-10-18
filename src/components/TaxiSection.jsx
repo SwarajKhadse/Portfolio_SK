@@ -3,13 +3,13 @@ export default function TaxiSection() {
       <div className="taxi-section" aria-label="Taxi journey">
         <div className="taxi-overlay">
           <div className="taxi-copy">
-            <div className="taxi-kicker">02 / TAXI</div>
+            <div className="taxi-kicker">02 / Taxi</div>
             <div className="taxi-rule" />
   
             <div className="taxi-label">
-              THE JOURNEY
+              The Journey
               <br />
-              BEGINS.
+              Begins.
             </div>
   
             <p>
@@ -20,23 +20,23 @@ export default function TaxiSection() {
           </div>
   
           <div className="taxi-route" aria-hidden="true">
-            <span>GATE</span>
+            <span>Gate</span>
             <div className="taxi-route-line" />
-            <span>TAXI</span>
+            <span>Taxi</span>
             <div className="taxi-route-arrow">↓</div>
           </div>
   
           <div className="taxi-side-note" aria-hidden="true">
             <span>02</span>
-            <strong>TAXIWAY</strong>
-            <small>FOLLOW THE LINE</small>
+            <strong>Taxiway</strong>
+            <small>Follow The Line</small>
           </div>
   
           <div className="taxi-footer">
-            <span>© 2026 SWARAJ KHADSE</span>
-            <span>CONTINUOUS FLIGHT / 02</span>
+            <span>© 2026 Swaraj Khadse</span>
+            <span>Continuous Flight / 02</span>
             <span>
-              SCROLL
+              Scroll
               <b>↓</b>
             </span>
           </div>

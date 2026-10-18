@@ -1,30 +1,10 @@
-import { useMemo } from "react";
-import { RoundedBox } from "@react-three/drei";
-import { CanvasTexture, SRGBColorSpace } from "three";
-
-function makeLabelTexture(text, { color = "#ffffff", width = 1024, height = 256, fontSize = 92 } = {}) {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext("2d");
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = color;
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-
-  let size = fontSize;
-  context.font = `600 ${size}px Arial, Helvetica, sans-serif`;
-  while (context.measureText(text).width > width * 0.92 && size > 20) {
-    size -= 2;
-    context.font = `600 ${size}px Arial, Helvetica, sans-serif`;
-  }
-  context.fillText(text, width / 2, height / 2);
-
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.needsUpdate = true;
-  return texture;
-}
+import { Suspense } from "react";
+import {
+    RoundedBox,
+    Text,
+  } from "@react-three/drei";
+  
+  import * as THREE from "three";
   
   
   /* =========================================================
@@ -421,15 +401,6 @@ function makeLabelTexture(text, { color = "#ffffff", width = 1024, height = 256,
   ========================================================= */
   
   function TerminalBay({ position, gateLabel, showAirportSign = false }) {
-    const gateLabelTexture = useMemo(
-      () => makeLabelTexture(gateLabel, { color: "#ffffff", width: 512, height: 160, fontSize: 92 }),
-      [gateLabel]
-    );
-    const airportLabelTexture = useMemo(
-      () => makeLabelTexture("international airport", { color: "#215a87", width: 1400, height: 180, fontSize: 72 }),
-      []
-    );
-
     return (
       <group position={position}>
         <RoundedBox
@@ -494,17 +465,20 @@ function makeLabelTexture(text, { color = "#ffffff", width = 1024, height = 256,
 
         <mesh position={[-3.05, 0.42, 1.30]}>
           <planeGeometry args={[1.06, 0.42]} />
-          <meshBasicMaterial color="#1477f8" toneMapped={false} />
+          <meshBasicMaterial color="#1477f8" />
         </mesh>
-        <mesh position={[-3.05, 0.42, 1.321]}>
-          <planeGeometry args={[0.98, 0.30]} />
-          <meshBasicMaterial
-            map={gateLabelTexture}
-            transparent
-            toneMapped={false}
-            depthWrite={false}
-          />
-        </mesh>
+        <Suspense fallback={null}>
+          <Text
+            position={[-3.05, 0.42, 1.315]}
+            fontSize={0.16}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0}
+          >
+            {gateLabel}
+          </Text>
+        </Suspense>
 
         {[-2.4, -0.8, 0.8, 2.2].map((x) => (
           <mesh key={x} position={[x, 2.08, 0]}>
@@ -518,15 +492,18 @@ function makeLabelTexture(text, { color = "#ffffff", width = 1024, height = 256,
             <RoundedBox args={[4.7, 0.48, 0.08]} radius={0.05} smoothness={4}>
               <meshStandardMaterial color="#f7fbff" roughness={0.32} />
             </RoundedBox>
-            <mesh position={[0, 0, 0.052]}>
-              <planeGeometry args={[4.42, 0.34]} />
-              <meshBasicMaterial
-                map={airportLabelTexture}
-                transparent
-                toneMapped={false}
-                depthWrite={false}
-              />
-            </mesh>
+            <Suspense fallback={null}>
+              <Text
+                position={[0, 0, 0.052]}
+                fontSize={0.27}
+                color="#215a87"
+                anchorX="center"
+                anchorY="middle"
+                outlineWidth={0}
+              >
+                international airport
+              </Text>
+            </Suspense>
           </group>
         )}
       </group>

@@ -5,7 +5,7 @@ function EkamevaCaseStudy({ onBack }) {
     <main className="ekameva-case-study">
 
       {/* ==================================================
-          FIXED CASE STUDY HEADER
+          Fixed Case Study Header
       ================================================== */}
 
       <header className="case-header">
@@ -15,11 +15,11 @@ function EkamevaCaseStudy({ onBack }) {
           onClick={onBack}
         >
           <span>←</span>
-          BACK TO WORK
+          Back To Work
         </button>
 
         <div className="case-header-center">
-          EKAMEV / CASE STUDY
+          EKAMEV / Case Study
         </div>
 
         <div className="case-header-right">
@@ -30,7 +30,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          HERO
+          Hero
       ================================================== */}
 
       <section className="case-hero">
@@ -38,7 +38,7 @@ function EkamevaCaseStudy({ onBack }) {
         <div className="case-hero-content">
 
           <div className="case-number">
-            01 / ENTERPRISE PRODUCT
+            01 / Enterprise Product
           </div>
 
           <h1>
@@ -61,10 +61,8 @@ function EkamevaCaseStudy({ onBack }) {
 
         <div className="case-hero-visual">
 
-          <div className="hero-visual-glow" />
-
           <img
-            src="/ekameva.png"
+            src="/ekameva-portfolio.webp"
             alt="EKAMEV interface"
           />
 
@@ -74,33 +72,33 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          PROJECT SNAPSHOT
+          Project Snapshot
       ================================================== */}
 
       <section className="case-snapshot">
 
         <div className="snapshot-item">
-          <span>CLIENT</span>
+          <span>Client</span>
           Reserve Bank of India
         </div>
 
         <div className="snapshot-item">
-          <span>DOMAIN</span>
+          <span>Domain</span>
           Enterprise / Banking
         </div>
 
         <div className="snapshot-item">
-          <span>ROLE</span>
+          <span>Role</span>
           Product Designer
         </div>
 
         <div className="snapshot-item">
-          <span>DISCIPLINE</span>
+          <span>Discipline</span>
           UX / UI
         </div>
 
         <div className="snapshot-item">
-          <span>YEAR</span>
+          <span>Year</span>
           2026
         </div>
 
@@ -108,7 +106,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          CONTEXT
+          Context
       ================================================== */}
 
       <section className="case-section">
@@ -120,12 +118,12 @@ function EkamevaCaseStudy({ onBack }) {
         <div className="case-section-main">
 
           <div className="case-section-heading">
-            <span>CONTEXT</span>
+            <span>Context</span>
 
             <h2>
-              ONE ORGANISATION.
+              One Organisation.
               <br />
-              MANY DIGITAL SYSTEMS.
+              Many Digital Systems.
             </h2>
           </div>
 
@@ -159,7 +157,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          WHY THIS MATTERS
+          Why This Matters
       ================================================== */}
 
       <section className="case-section case-dark">
@@ -172,12 +170,12 @@ function EkamevaCaseStudy({ onBack }) {
 
           <div className="case-section-heading">
 
-            <span>THE UX PROBLEM</span>
+            <span>The UX Problem</span>
 
             <h2>
-              ACCESS SHOULD
+              Access Should
               <br />
-              FEEL SIMPLE.
+              Feel Simple.
             </h2>
 
           </div>
@@ -207,7 +205,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          RESEARCH
+          Research
       ================================================== */}
 
       <section className="case-section">
@@ -220,12 +218,12 @@ function EkamevaCaseStudy({ onBack }) {
 
           <div className="case-section-heading">
 
-            <span>RESEARCH</span>
+            <span>Research</span>
 
             <h2>
-              UNDERSTANDING
+              Understanding
               <br />
-              THE ACCESS JOURNEY.
+              The Access Journey.
             </h2>
 
           </div>
@@ -243,7 +241,7 @@ function EkamevaCaseStudy({ onBack }) {
               <div className="research-item">
                 <span>01</span>
                 <div>
-                  <strong>ENTRY</strong>
+                  <strong>Entry</strong>
                   <p>
                     How does a user understand where
                     to begin?
@@ -254,7 +252,7 @@ function EkamevaCaseStudy({ onBack }) {
               <div className="research-item">
                 <span>02</span>
                 <div>
-                  <strong>AUTHENTICATION</strong>
+                  <strong>Authentication</strong>
                   <p>
                     How can multiple authentication
                     methods remain clear?
@@ -265,7 +263,7 @@ function EkamevaCaseStudy({ onBack }) {
               <div className="research-item">
                 <span>03</span>
                 <div>
-                  <strong>RECOVERY</strong>
+                  <strong>Recovery</strong>
                   <p>
                     What happens when authentication
                     does not go as expected?
@@ -276,7 +274,7 @@ function EkamevaCaseStudy({ onBack }) {
               <div className="research-item">
                 <span>04</span>
                 <div>
-                  <strong>DESTINATION</strong>
+                  <strong>Destination</strong>
                   <p>
                     How quickly can a user move from
                     authentication to the right application?
@@ -294,7 +292,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          DESIGN PRINCIPLES
+          Design Principles
       ================================================== */}
 
       <section className="case-principles">
@@ -305,12 +303,12 @@ function EkamevaCaseStudy({ onBack }) {
 
         <div className="case-principles-content">
 
-          <span>DESIGN PRINCIPLES</span>
+          <span>Design Principles</span>
 
           <h2>
-            REMOVE FRICTION.
+            Remove Friction.
             <br />
-            KEEP TRUST.
+            Keep Trust.
           </h2>
 
           <div className="principles-grid">
@@ -321,7 +319,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                CLARITY
+                Clarity
               </h3>
 
               <p>
@@ -337,7 +335,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                CONSISTENCY
+                Consistency
               </h3>
 
               <p>
@@ -353,7 +351,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                SECURITY
+                Security
               </h3>
 
               <p>
@@ -369,7 +367,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                SPEED
+                Speed
               </h3>
 
               <p>
@@ -386,7 +384,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          FLOW
+          Flow
       ================================================== */}
 
       <section className="case-section case-dark">
@@ -399,12 +397,12 @@ function EkamevaCaseStudy({ onBack }) {
 
           <div className="case-section-heading">
 
-            <span>USER FLOW</span>
+            <span>User Flow</span>
 
             <h2>
-              FROM IDENTITY
+              From Identity
               <br />
-              TO DESTINATION.
+              To Destination.
             </h2>
 
           </div>
@@ -417,7 +415,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                ENTRY
+                Entry
               </h3>
 
               <p>
@@ -438,7 +436,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                AUTHENTICATE
+                Authenticate
               </h3>
 
               <p>
@@ -459,7 +457,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                VERIFY
+                Verify
               </h3>
 
               <p>
@@ -479,7 +477,7 @@ function EkamevaCaseStudy({ onBack }) {
               </div>
 
               <h3>
-                CONTINUE
+                Continue
               </h3>
 
               <p>
@@ -496,19 +494,19 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          LOGIN DESIGN
+          Login Design
       ================================================== */}
 
       <section className="case-showcase">
 
         <div className="showcase-heading">
 
-          <span>06 / EXPERIENCE</span>
+          <span>06 / Experience</span>
 
           <h2>
-            THE LOGIN
+            The Login
             <br />
-            EXPERIENCE.
+            Experience.
           </h2>
 
           <p>
@@ -523,7 +521,7 @@ function EkamevaCaseStudy({ onBack }) {
         <div className="showcase-screen">
 
           <img
-            src="/ekameva.png"
+            src="/ekameva-portfolio.webp"
             alt="EKAMEV authentication experience"
           />
 
@@ -533,7 +531,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          INFORMATION ARCHITECTURE
+          Information Architecture
       ================================================== */}
 
       <section className="case-section">
@@ -546,12 +544,12 @@ function EkamevaCaseStudy({ onBack }) {
 
           <div className="case-section-heading">
 
-            <span>INFORMATION ARCHITECTURE</span>
+            <span>Information Architecture</span>
 
             <h2>
-              MAKE THE
+              Make The
               <br />
-              COMPLEX INVISIBLE.
+              Complex Invisible.
             </h2>
 
           </div>
@@ -581,19 +579,19 @@ function EkamevaCaseStudy({ onBack }) {
               <div className="ia-items">
 
                 <span>
-                  AUTHENTICATION
+                  Authentication
                 </span>
 
                 <span>
-                  IDENTITY
+                  Identity
                 </span>
 
                 <span>
-                  ACCESS
+                  Access
                 </span>
 
                 <span>
-                  APPLICATIONS
+                  Applications
                 </span>
 
               </div>
@@ -608,7 +606,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          UI SYSTEM
+          UI System
       ================================================== */}
 
       <section className="case-system">
@@ -619,12 +617,12 @@ function EkamevaCaseStudy({ onBack }) {
 
         <div className="system-content">
 
-          <span>DESIGN SYSTEM</span>
+          <span>Design System</span>
 
           <h2>
-            A SYSTEM,
+            A System,
             <br />
-            NOT A SCREEN.
+            Not A Screen.
           </h2>
 
           <p>
@@ -639,34 +637,34 @@ function EkamevaCaseStudy({ onBack }) {
           <div className="system-grid">
 
             <div>
-              <span>TYPE</span>
+              <span>Type</span>
 
               <strong>
-                LARGE / CLEAR
+                Large / Clear
               </strong>
             </div>
 
             <div>
-              <span>LAYOUT</span>
+              <span>Layout</span>
 
               <strong>
-                STRUCTURED
+                Structured
               </strong>
             </div>
 
             <div>
-              <span>STATES</span>
+              <span>States</span>
 
               <strong>
-                PREDICTABLE
+                Predictable
               </strong>
             </div>
 
             <div>
-              <span>INTERACTION</span>
+              <span>Interaction</span>
 
               <strong>
-                MINIMAL
+                Minimal
               </strong>
             </div>
 
@@ -678,7 +676,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          MY ROLE
+          My Role
       ================================================== */}
 
       <section className="case-section case-dark">
@@ -691,12 +689,12 @@ function EkamevaCaseStudy({ onBack }) {
 
           <div className="case-section-heading">
 
-            <span>MY CONTRIBUTION</span>
+            <span>My Contribution</span>
 
             <h2>
-              FROM FLOW
+              From Flow
               <br />
-              TO INTERFACE.
+              To Interface.
             </h2>
 
           </div>
@@ -715,32 +713,32 @@ function EkamevaCaseStudy({ onBack }) {
 
               <div>
                 <span>01</span>
-                UX FLOWS
+                UX Flows
               </div>
 
               <div>
                 <span>02</span>
-                INFORMATION ARCHITECTURE
+                Information Architecture
               </div>
 
               <div>
                 <span>03</span>
-                WIREFRAMING
+                Wireframing
               </div>
 
               <div>
                 <span>04</span>
-                UI DESIGN
+                UI Design
               </div>
 
               <div>
                 <span>05</span>
-                PROTOTYPING
+                Prototyping
               </div>
 
               <div>
                 <span>06</span>
-                DESIGN SYSTEM
+                Design System
               </div>
 
             </div>
@@ -753,7 +751,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          OUTCOME
+          Outcome
       ================================================== */}
 
       <section className="case-outcome">
@@ -764,12 +762,12 @@ function EkamevaCaseStudy({ onBack }) {
 
         <div className="outcome-content">
 
-          <span>OUTCOME</span>
+          <span>Outcome</span>
 
           <h2>
-            COMPLEXITY
+            Complexity
             <br />
-            BECOMES CLARITY.
+            Becomes Clarity.
           </h2>
 
           <p>
@@ -790,13 +788,13 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          PUBLIC CONTEXT
+          Public Context
       ================================================== */}
 
       <section className="case-source">
 
         <span>
-          PUBLIC CONTEXT
+          Public Context
         </span>
 
         <p>
@@ -813,7 +811,7 @@ function EkamevaCaseStudy({ onBack }) {
 
 
       {/* ==================================================
-          FOOTER
+          Footer
       ================================================== */}
 
       <footer className="case-footer">
@@ -823,11 +821,11 @@ function EkamevaCaseStudy({ onBack }) {
           onClick={onBack}
         >
           <span>←</span>
-          BACK TO SELECTED WORK
+          Back To Selected Work
         </button>
 
         <div>
-          SWARAJ KHADSE / 2026
+          Swaraj Khadse / 2026
         </div>
 
       </footer>

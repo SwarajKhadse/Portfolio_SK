@@ -14,8 +14,8 @@ import {
 
 import {
   ContactShadows,
+  Environment,
   Line,
-  Sky,
   useGLTF,
 } from "@react-three/drei";
 
@@ -255,8 +255,11 @@ function getJourneyProgress(scrollPositionRef, journeyRef) {
 }
 
 function getTravelProgress(pageProgress) {
+  // Keep the aircraft parked for the gate hero. Aircraft movement begins at
+  // the exact same scroll threshold as the first camera/story hand-off.
+  const start = STAGE_PROGRESS.gate;
   return THREE.MathUtils.clamp(
-    (pageProgress - 0.12) / 0.88,
+    (pageProgress - start) / (1 - start),
     0,
     1
   );
@@ -367,18 +370,18 @@ function JourneyAircraft({
 
 const CAMERA_KEYFRAMES = [
   // angle 2: low side view, close enough to read the aircraft but not crop its wings.
-  { progress: 0.18, side: 8.8, height: 2.7, behind: 4.1, lead: 0.6, aimY: 0.0, fov: 43 },
+  { progress: 0.18, side: 8.8, height: 4.0, behind: 5.5, lead: 0.6, aimY: 2.2, fov: 43 },
   // angle 3: pull back to reveal the gate row, apron and taxi markings together.
-  { progress: 0.38, side: 10.1, height: 4.1, behind: 5.0, lead: 0.8, aimY: 0.05, fov: 45 },
+  { progress: 0.34, side: 10.1, height: 4.8, behind: 6.2, lead: 0.8, aimY: 2.3, fov: 45 },
   // angle 4: wide, elevated view of the full turn; keep the target close to the aircraft.
-  { progress: 0.52, side: 10.5, height: 5.8, behind: 5.8, lead: 3.1, aimY: 0.1, fov: 48 },
+  { progress: 0.48, side: 10.5, height: 6.2, behind: 6.0, lead: 3.1, aimY: 2.8, fov: 48 },
   // angle 5: elevated three-quarter shot that includes the route and runway entrance.
-  { progress: 0.67, side: 6.8, height: 5.0, behind: 5.5, lead: 2.0, aimY: 0.18, fov: 46 },
+  { progress: 0.67, side: 6.8, height: 5.2, behind: 5.5, lead: 2.0, aimY: 2.0, fov: 46 },
   // runway alignment: lower and tighten the frame without pushing the aircraft out of view.
-  { progress: 0.78, side: 2.7, height: 3.0, behind: 8.4, lead: 3.5, aimY: 0.25, fov: 42 },
+  { progress: 0.78, side: 2.7, height: 3.8, behind: 8.4, lead: 3.5, aimY: 1.1, fov: 42 },
   // takeoff: transition into a genuine rear-follow composition with sky above the aircraft.
-  { progress: 0.88, side: 0.15, height: 3.0, behind: 9.8, lead: 4.4, aimY: 0.45, fov: 42 },
-  { progress: 1.0, side: 0.15, height: 4.0, behind: 12.4, lead: 5.2, aimY: 0.9, fov: 43 },
+  { progress: 0.88, side: 0.15, height: 4.0, behind: 9.8, lead: 4.4, aimY: 0.8, fov: 42 },
+  { progress: 1.0, side: 0.15, height: 4.8, behind: 12.4, lead: 5.2, aimY: 0.9, fov: 43 },
 ];
 
 function copyCameraConfig(source, output) {
@@ -431,6 +434,8 @@ function JourneyCamera({ scrollPositionRef, journeyRef, journeyCurve }) {
   const right = useMemo(() => new THREE.Vector3(), []);
   const candidateSide = useMemo(() => new THREE.Vector3(), []);
   const cameraSide = useRef(new THREE.Vector3(0, 0, 1));
+  const outerApronSide = useMemo(() => new THREE.Vector3(0, 0, 1), []);
+  const desiredSide = useMemo(() => new THREE.Vector3(), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
   const target = useMemo(() => new THREE.Vector3(), []);
   const lookAhead = useMemo(() => new THREE.Vector3(), []);
@@ -465,14 +470,22 @@ function JourneyCamera({ scrollPositionRef, journeyRef, journeyCurve }) {
     tangent.subVectors(aircraftAhead, aircraftPoint).normalize();
     right.crossVectors(tangent, up).normalize();
 
-    // Keep the camera on the same physical side of the path. A raw cross-product
-    // flips sign on a U-turn; choosing the nearest orientation prevents the camera
-    // from crossing through the terminal or suddenly jumping to the opposite side.
+    // Keep the camera on the open apron side while the aircraft passes the gates
+    // and completes its U-turn. Only after the aircraft clears the terminal's west
+    // end do we blend toward a tangent-relative side for runway/takeoff framing.
     if (right.lengthSq() > 0.0001) {
       candidateSide.copy(right);
-      if (candidateSide.dot(cameraSide.current) < 0) candidateSide.negate();
-      const sideDamping = 1 - Math.exp(-5.5 * Math.max(delta, 0.001));
-      cameraSide.current.lerp(candidateSide, sideDamping).normalize();
+      if (candidateSide.dot(outerApronSide) < 0) candidateSide.negate();
+
+      const runwaySideBlend = THREE.MathUtils.smoothstep(
+        (pageProgress - 0.78) / 0.12,
+        0,
+        1
+      );
+      desiredSide.copy(outerApronSide).lerp(candidateSide, runwaySideBlend).normalize();
+
+      const sideDamping = 1 - Math.exp(-4.4 * Math.max(delta, 0.001));
+      cameraSide.current.lerp(desiredSide, sideDamping).normalize();
     }
 
     if (pageProgress <= STAGE_PROGRESS.gate) {
@@ -584,6 +597,84 @@ function TaxiGuidance({ journeyCurve }) {
   );
 }
 
+function JourneyHeadlineBackdrop({ scrollPositionRef, journeyRef }) {
+  const headlineRef = useRef(null);
+
+  // Keep the outlined headline visible on the opening gate shot and fade it
+  // away as the user scrolls into the taxi / U-turn sequence.
+  useEffect(() => {
+    let frame = 0;
+    const updateOpacity = () => {
+      const progress = getJourneyProgress(scrollPositionRef, journeyRef);
+      const fade = THREE.MathUtils.smoothstep(progress, 0.025, 0.19);
+      if (headlineRef.current) {
+        headlineRef.current.style.opacity = String(1 - fade);
+      }
+      frame = window.requestAnimationFrame(updateOpacity);
+    };
+
+    updateOpacity();
+    return () => window.cancelAnimationFrame(frame);
+  }, [scrollPositionRef, journeyRef]);
+
+  return (
+    <svg
+      ref={headlineRef}
+      className="journey-headline-backdrop"
+      aria-hidden="true"
+      viewBox="0 0 1920 420"
+      preserveAspectRatio="none"
+      style={{
+        opacity: 1,
+        transition: "opacity 120ms linear",
+        willChange: "opacity",
+      }}
+    >
+      <defs>
+        {/* Soft blue tint inside the outline, kept light so the airport remains visible through it. */}
+        <linearGradient id="headline-text-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#eaf7ff" stopOpacity="0.24" />
+          <stop offset="36%" stopColor="#c5e4fb" stopOpacity="0.19" />
+          <stop offset="68%" stopColor="#a9d3f2" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#e7f5ff" stopOpacity="0.04" />
+        </linearGradient>
+        {/* Fade the whole headline vertically: crisp at the top, dissolving toward the bottom. */}
+        <linearGradient id="headline-vertical-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="white" stopOpacity="1" />
+          <stop offset="38%" stopColor="white" stopOpacity="1" />
+          <stop offset="54%" stopColor="white" stopOpacity="0.72" />
+          <stop offset="70%" stopColor="white" stopOpacity="0.28" />
+          <stop offset="86%" stopColor="white" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+        <mask id="headline-outline-mask">
+          <rect width="1920" height="420" fill="url(#headline-vertical-fade)" />
+        </mask>
+      </defs>
+      <text
+        x="960"
+        y="310"
+        textAnchor="middle"
+        textLength="1770"
+        lengthAdjust="spacingAndGlyphs"
+        fontFamily="Inter, Arial, Helvetica, sans-serif"
+        fontSize="270"
+        fontWeight="500"
+        letterSpacing="-10"
+        fill="url(#headline-text-gradient)"
+        stroke="#ffffff"
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        strokeOpacity="0.96"
+        mask="url(#headline-outline-mask)"
+      >
+        Ideas Take Flight
+      </text>
+    </svg>
+  );
+}
+
 function AirportJourneyScene({
   scrollPositionRef,
   journeyRef,
@@ -595,27 +686,19 @@ function AirportJourneyScene({
 
   return (
     <>
-      <color attach="background" args={["#91cfff"]} />
-      <fog attach="fog" args={["#bfdef2", 36, 96]} />
-
-      <Sky
-        distance={450000}
-        sunPosition={[18, 24, 12]}
-        turbidity={1.35}
-        rayleigh={1.1}
-        mieCoefficient={0.004}
-        mieDirectionalG={0.76}
-      />
+      {/* Keep the renderer's clear pixels transparent. The CSS sky and headline
+          sit behind this scene, so terminal geometry naturally masks the type. */}
+      <fog attach="fog" args={["#c9e4f6", 36, 96]} />
 
       <hemisphereLight
-        args={["#eaf8ff", "#6689a8", 1.0]}
+        args={["#eaf8ff", "#6689a8", 0.82]}
       />
 
-      <ambientLight intensity={0.38} />
+      <ambientLight intensity={0.2} />
 
       <directionalLight
         position={[-14, 10, 12]}
-        intensity={2.35}
+        intensity={2.15}
         color="#fff4e5"
         castShadow
         shadow-mapSize-width={2048}
@@ -651,6 +734,11 @@ function AirportJourneyScene({
         resolution={1024}
       />
 
+      <Environment
+        preset="city"
+        environmentIntensity={0.3}
+      />
+
       <JourneyCamera
         scrollPositionRef={scrollPositionRef}
         journeyRef={journeyRef}
@@ -665,40 +753,59 @@ export default function AirportJourneyCanvas({
   journeyRef,
 }) {
   return (
-    <Canvas
-      className="journey-canvas"
-      camera={{
-        position: [
-          HERO_CAMERA.x,
-          HERO_CAMERA.y,
-          HERO_CAMERA.z,
-        ],
-        fov: 48,
-        near: 0.1,
-        far: 140,
+    <div
+      className="airport-scene-composite"
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #c9e6fa 0%, #e5f3fc 46%, #d5eafa 100%)",
       }}
-      dpr={[1, 1.5]}
-      shadows
-      gl={{
-        antialias: true,
-        powerPreference: "high-performance",
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.92,
-      }}
-      fallback={
-        <div className="journey-canvas-fallback">
-          <span>
-            Enable WebGL or hardware acceleration to view the
-            3D airport journey.
-          </span>
-        </div>
-      }
     >
-      <AirportJourneyScene
+      <JourneyHeadlineBackdrop
         scrollPositionRef={scrollPositionRef}
         journeyRef={journeyRef}
       />
-    </Canvas>
+      <Canvas
+        className="journey-canvas"
+        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        camera={{
+          position: [
+            HERO_CAMERA.x,
+            HERO_CAMERA.y,
+            HERO_CAMERA.z,
+          ],
+          fov: 48,
+          near: 0.1,
+          far: 140,
+        }}
+        dpr={[1, 1.5]}
+        shadows
+        gl={{
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance",
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 0.92,
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor(0x000000, 0);
+        }}
+        fallback={
+          <div className="journey-canvas-fallback">
+            <span>
+              Enable WebGL or hardware acceleration to view the
+              3D airport journey.
+            </span>
+          </div>
+        }
+      >
+        <AirportJourneyScene
+          scrollPositionRef={scrollPositionRef}
+          journeyRef={journeyRef}
+        />
+      </Canvas>
+    </div>
   );
 }
 

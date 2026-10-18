@@ -8,7 +8,6 @@ import EkamevaCaseStudy from "./components/case-study/EkamevaCaseStudy.jsx";
 import AirportGateTrial from "./components/AirportGateTrial.jsx";
 import AirportJourneyCanvas from "./components/AirportJourneyCanvas.jsx";
 import SplashScreen from "./components/SplashScreen.jsx";
-import AmbientAudio from "./components/AmbientAudio.jsx";
 
 import "./App.css";
 
@@ -95,6 +94,18 @@ function App() {
     });
   }, []);
 
+  const navigateToAbout = useCallback(() => {
+    const section = journeyRef.current;
+    if (!section) return;
+
+    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+    const scrollRange = Math.max(1, section.offsetHeight - window.innerHeight);
+    lenisRef.current?.scrollTo(sectionTop + scrollRange * 0.315, {
+      duration: 1.15,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    });
+  }, []);
+
   return (
     <main className="app continuous-app">
       <div ref={journeyRef} className="journey-flow">
@@ -112,17 +123,7 @@ function App() {
               journeyRef={journeyRef}
               onNavigateToWork={() => navigateTo(workRef)}
               onNavigateToExperience={() => navigateTo(experienceRef)}
-              onExploreJourney={() => {
-                const section = journeyRef.current;
-                if (!section) return;
-                const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-                const scrollRange = Math.max(1, section.offsetHeight - window.innerHeight);
-                const target = sectionTop + scrollRange * 0.2;
-                lenisRef.current?.scrollTo(target, {
-                  duration: 1.15,
-                  easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-                });
-              }}
+              onNavigateToAbout={navigateToAbout}
             />
           </section>
         </div>
@@ -150,14 +151,6 @@ function App() {
       >
         <EkamevaCaseStudy onBack={() => setCaseStudy(false)} />
       </section>
-
-      {phase === "site" && (
-        <AmbientAudio
-          active={!caseStudy}
-          scrollPositionRef={scrollPositionRef}
-          journeyRef={journeyRef}
-        />
-      )}
 
       {phase === "splash" && (
         <SplashScreen onComplete={handleSplashComplete} />

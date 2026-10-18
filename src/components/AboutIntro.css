@@ -12,9 +12,9 @@
 
   overflow: hidden;
 
-  background: #080808;
+  background: #F0F1FF;
 
-  color: #ffffff;
+  color: #21166F;
 
   opacity: 0;
 
@@ -103,7 +103,7 @@
 .about-label {
   margin-bottom: 30px;
 
-  font-size: 9px;
+  font-size: 14px;
 
   font-weight: 600;
 
@@ -122,8 +122,7 @@
 .about-copy h2 {
   margin: 0;
 
-  font-size:
-    clamp(
+  font-size: clamp(
       52px,
       6.3vw,
       108px
@@ -166,7 +165,7 @@
 
   margin-top: 42px;
 
-  font-size: 9px;
+  font-size: 14px;
 
   font-weight: 600;
 
@@ -411,7 +410,7 @@
   justify-content: space-between;
   align-items: center;
 
-  font-size: 8px;
+  font-size: 14px;
   letter-spacing: 3px;
 
   pointer-events: none;
@@ -460,8 +459,7 @@
   }
 
   .about-copy h2 {
-    font-size:
-      clamp(
+    font-size: clamp(
         50px,
         15vw,
         90px

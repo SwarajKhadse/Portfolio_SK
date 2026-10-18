@@ -4,10 +4,9 @@
   z-index: 9999;
   overflow: hidden;
   isolation: isolate;
-  color: #ffffff;
-  background: linear-gradient(122deg, #0647c6 0%, #075fdf 48%, #086fe4 100%);
+  color: #21166F;
+  background: linear-gradient(122deg, #F0F1FF 0%, #E9EAFF 48%, #C4C6E6 100%);
   cursor: pointer;
-  text-transform: lowercase;
   transition: opacity 620ms ease, transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -24,7 +23,7 @@
   pointer-events: none;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.09), transparent 44%),
-    linear-gradient(0deg, rgba(2, 38, 117, 0.12), transparent 48%);
+    linear-gradient(0deg, rgba(33, 22, 111, 0.08), transparent 48%);
 }
 
 .particle-splash-canvas {
@@ -36,54 +35,26 @@
   pointer-events: none;
 }
 
-/* Two route-like ellipses rotate in opposite directions; no decorative sphere or third ring. */
-.splash-orbit {
+/* The intro uses the aircraft as its visual anchor; no unrelated orbital circle. */
+.splash-plane-fallback {
   position: absolute;
-  top: 50%;
-  left: 50%;
   z-index: 3;
-  width: min(70vmin, 680px);
-  aspect-ratio: 1;
+  top: 48%;
+  left: 50%;
+  display: block;
+  width: min(38vw, 480px);
+  max-height: 28vh;
+  object-fit: contain;
   transform: translate(-50%, -50%);
+  opacity: 0.88;
+  filter: drop-shadow(0 14px 28px rgba(33, 22, 111, 0.18));
+  animation: plane-fallback-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
   pointer-events: none;
 }
 
-.splash-orbit span {
-  position: absolute;
-  display: block;
-  border: 1px solid rgba(235, 249, 255, 0.14);
-  border-radius: 50%;
-  transform-origin: center;
-  will-change: transform;
-}
-
-.splash-orbit span:nth-child(1) {
-  top: 19%;
-  left: 0;
-  width: 100%;
-  height: 62%;
-  border-color: rgba(255, 255, 255, 0.36);
-  animation: orbit-clockwise 31s linear infinite;
-}
-
-.splash-orbit span:nth-child(2) {
-  top: 0;
-  left: 19%;
-  width: 62%;
-  height: 100%;
-  border-color: rgba(101, 224, 255, 0.48);
-  animation: orbit-counterclockwise 39s linear infinite;
-}
-
-
-@keyframes orbit-clockwise {
-  from { transform: rotate(-18deg); }
-  to { transform: rotate(342deg); }
-}
-
-@keyframes orbit-counterclockwise {
-  from { transform: rotate(24deg); }
-  to { transform: rotate(-336deg); }
+@keyframes plane-fallback-in {
+  from { opacity: 0; transform: translate(-46%, -50%) scale(0.94); }
+  to { opacity: 0.88; transform: translate(-50%, -50%) scale(1); }
 }
 
 .splash-center {
@@ -106,17 +77,17 @@
 }
 
 .splash-logo {
-  color: #ffffff;
+  color: #21166F;
   font-family: "Inter", "Aptos", "Segoe UI", Arial, sans-serif;
   font-size: clamp(48px, 7vw, 82px);
   font-weight: 720;
   letter-spacing: -0.075em;
   line-height: 1;
-  text-shadow: 0 4px 32px rgba(0, 41, 128, 0.18);
+  text-shadow: 0 4px 32px rgba(33, 22, 111, 0.18);
 }
 
 .splash-logo span {
-  color: #ff8667;
+  color: #FF9364;
 }
 
 .splash-divider {
@@ -124,14 +95,14 @@
   height: 2px;
   margin-top: 17px;
   border-radius: 2px;
-  background: #ff8667;
-  box-shadow: 0 0 18px rgba(255, 134, 103, 0.42);
+  background: #FF9364;
+  box-shadow: 0 0 18px rgba(255, 147, 100, 0.26);
 }
 
 .splash-label {
   margin-top: 12px;
-  color: rgba(245, 251, 255, 0.78);
-  font-size: 9px;
+  color: rgba(33, 22, 111, 0.78);
+  font-size: 14px;
   letter-spacing: 1.8px;
 }
 
@@ -148,22 +119,22 @@
 }
 
 .splash-progress span {
-  color: rgba(244, 251, 255, 0.74);
-  font-size: 10px;
+  color: rgba(33, 22, 111, 0.74);
+  font-size: 14px;
   letter-spacing: 0.2px;
 }
 
 .splash-progress strong {
   margin-left: 13px;
-  color: #ffffff;
-  font-size: 12px;
+  color: #21166F;
+  font-size: 14px;
   font-weight: 650;
   letter-spacing: 0.2px;
 }
 
 .splash-progress em {
-  color: rgba(244, 251, 255, 0.65);
-  font-size: 9px;
+  color: rgba(33, 22, 111, 0.65);
+  font-size: 14px;
   font-style: normal;
 }
 
@@ -177,23 +148,23 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 15px;
-  border-top: 1px solid rgba(245, 251, 255, 0.24);
+  border-top: 1px solid rgba(33, 22, 111, 0.18);
 }
 
 .splash-bottom span {
-  color: rgba(240, 249, 255, 0.72);
-  font-size: 9px;
+  color: rgba(33, 22, 111, 0.72);
+  font-size: 14px;
   letter-spacing: 0.3px;
 }
 
 .splash-bottom span:last-child {
-  color: #ffffff;
+  color: #21166F;
 }
 
 @media (max-width: 720px) {
-  .splash-orbit {
+  .splash-plane-fallback {
     top: 45%;
-    width: min(92vmin, 560px);
+    width: min(74vw, 400px);
   }
 
   .splash-progress {
@@ -208,7 +179,7 @@
   }
 
   .splash-bottom span {
-    font-size: 7px;
+    font-size: 14px;
     letter-spacing: 0.2px;
   }
 
@@ -220,7 +191,7 @@
 @media (prefers-reduced-motion: reduce) {
   .brand-splash,
   .splash-center,
-  .splash-orbit span {
+  .splash-plane-fallback {
     animation: none !important;
     transition: none !important;
   }
