@@ -99,12 +99,56 @@ import {
     return texture;
   }
 
+  /*
+   * Pale, subtly grainy concrete for the gate apron. Keeping the apron lighter
+   * than the taxi route makes the dark road read as a continuous paved lane.
+   */
+  function createConcreteTexture(repeatX = 4, repeatY = 6, seed = 417) {
+    if (typeof document === "undefined") return null;
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    const image = context.createImageData(size, size);
+    let state = seed >>> 0;
+    const random = () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        const mottling = Math.sin((x / size) * Math.PI * 7) * 1.6 + Math.cos((y / size) * Math.PI * 9) * 1.3;
+        const grain = (random() - 0.5) * 10;
+        const value = 185 + mottling + grain;
+        const index = (y * size + x) * 4;
+        image.data[index] = Math.max(160, Math.min(205, value - 3));
+        image.data[index + 1] = Math.max(165, Math.min(210, value));
+        image.data[index + 2] = Math.max(170, Math.min(215, value + 4));
+        image.data[index + 3] = 255;
+      }
+    }
+
+    context.putImageData(image, 0, 0);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeatX, repeatY);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
   /* =========================================================
      APRON
   ========================================================= */
   
   function Apron() {
-    const asphaltTexture = useMemo(() => createAsphaltTexture(5, 7, 137), []);
+    const concreteTexture = useMemo(() => createConcreteTexture(4, 6, 117), []);
     return (
       <group>
   
@@ -129,7 +173,7 @@ import {
           />
   
           <meshStandardMaterial
-            map={asphaltTexture || undefined}
+            map={concreteTexture || undefined}
             color="#ffffff"
             roughness={0.98}
             metalness={0.0}
@@ -212,93 +256,19 @@ import {
   function StandMarkings() {
     return (
       <group>
-  
+        {/* Keep only the yellow stand lead-in mark. Removing the loose white
+            cross-bars makes the taxi route's two edge stripes read as one road. */}
         <mesh
-          position={[
-            0,
-            -0.412,
-            -0.8,
-          ]}
-          rotation={[
-            -Math.PI / 2,
-            0,
-            0,
-          ]}
+          position={[-1.0, -0.412, 0.2]}
+          rotation={[-Math.PI / 2, 0, 0]}
         >
-          <planeGeometry
-            args={[
-              7.2,
-              0.055,
-            ]}
-          />
-  
-          <meshBasicMaterial
-            color={C.white}
-          />
+          <planeGeometry args={[0.06, 6]} />
+          <meshBasicMaterial color={C.yellow} />
         </mesh>
-  
-  
-        <mesh
-          position={[
-            -1.0,
-            -0.412,
-            0.2,
-          ]}
-          rotation={[
-            -Math.PI / 2,
-            0,
-            0,
-          ]}
-        >
-          <planeGeometry
-            args={[
-              0.06,
-              6,
-            ]}
-          />
-  
-          <meshBasicMaterial
-            color={C.yellow}
-          />
-        </mesh>
-  
-  
-        {[-3.1, 2.7].map(
-          (x) => (
-            <mesh
-              key={x}
-              position={[
-                x,
-                -0.412,
-                1.2,
-              ]}
-              rotation={[
-                -Math.PI / 2,
-                0,
-                0,
-              ]}
-            >
-              <planeGeometry
-                args={[
-                  0.04,
-                  4,
-                ]}
-              />
-  
-              <meshBasicMaterial
-                color={C.white}
-                transparent
-                opacity={0.6}
-              />
-            </mesh>
-          )
-        )}
-  
       </group>
     );
   }
-  
-  
+
     /* =========================================================
      TAXIWAY + RUNWAY
      A darker, broad runway is layered beyond the taxi connector:
@@ -430,7 +400,7 @@ import {
             position={[x, -0.395, runwayStartZ - 0.35]}
             rotation={[-Math.PI / 2, 0, 0]}
           >
-            <planeGeometry args={[0.48, 1.35]} />
+            <planeGeometry args={[1.35, 0.48]} />
             <meshBasicMaterial color="#f7f2e9" />
           </mesh>
         ))}
