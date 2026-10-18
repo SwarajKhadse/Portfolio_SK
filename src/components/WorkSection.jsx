@@ -3,181 +3,61 @@ import "./WorkSection.css";
 function WorkSection({ onOpenCaseStudy }) {
   return (
     <section className="work-section">
-
       <div className="work-header">
-
-        <div className="work-label">
-          02 / SELECTED WORK
-        </div>
-
-        <div className="work-year">
-          2023 — 2026
-        </div>
-
+        <span className="work-label">selected work</span>
+        <span className="work-year">product · systems · digital</span>
       </div>
-
 
       <div className="work-intro">
-
-        <h2>
-          SELECTED
-          <br />
-          WORK.
-        </h2>
-
-        <p>
-          A selection of digital products and experiences
-          designed around complex problems, clear systems
-          and meaningful interactions.
-        </p>
-
+        <div>
+          <span className="work-eyebrow">a few things i’ve helped shape</span>
+          <h2>real work.<br /><span>real impact.</span></h2>
+        </div>
+        <p>three projects. different problems. one focus: making complex digital experiences easier to use.</p>
       </div>
 
-
-      <article className="featured-project">
-
-        <div className="project-top">
-
-          <span>
-            01
-          </span>
-
-          <span>
-            PRODUCT DESIGN / ENTERPRISE
-          </span>
-
-        </div>
-
-
-        <div className="project-layout">
-
-
-          {/* PROJECT VISUAL */}
-
-          <div className="project-visual">
-
-            <img
-              src="/ekameva.png"
-              alt="RBI Ekameva"
-              className="project-image"
-            />
-
-            <div className="project-glow" />
-
-            <div className="project-device">
-
-              <div className="device-bar" />
-
-              <div className="device-content">
-
-                <div className="device-sidebar" />
-
-                <div className="device-main">
-
-                  <div className="device-line large" />
-
-                  <div className="device-line" />
-
-                  <div className="device-line short" />
-
-                  <div className="device-cards">
-
-                    <span />
-                    <span />
-                    <span />
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-
-            <div className="project-orbit orbit-one" />
-
-            <div className="project-orbit orbit-two" />
-
+      <div className="project-grid">
+        <article className="project-card project-card--hrms">
+          <div className="project-card-topline"><span>01</span><span>enterprise product</span></div>
+          <div className="project-art project-art--hrms" aria-hidden="true">
+            <span className="project-art-overline">employee lifecycle</span>
+            <strong>eHRMS</strong>
+            <span className="project-art-route"><i /><i /><i /><i /></span>
           </div>
-
-
-          {/* PROJECT INFO */}
-
-          <div className="project-info">
-
-            <div className="project-category">
-              01 / ENTERPRISE PRODUCT
-            </div>
-
-
-            <h3>
-              RBI
-              <br />
-              EKAMEVA
-            </h3>
-
-
-            <p>
-              A unified Single Sign-On experience designed
-              to simplify secure access across enterprise
-              banking applications.
-            </p>
-
-
-            <div className="project-meta">
-
-              <div>
-                <span>
-                  ROLE
-                </span>
-
-                Product Designer
-              </div>
-
-
-              <div>
-                <span>
-                  TYPE
-                </span>
-
-                UX / UI
-              </div>
-
-
-              <div>
-                <span>
-                  YEAR
-                </span>
-
-                2026
-              </div>
-
-            </div>
-
-
-            {/* CASE STUDY BUTTON */}
-
-            <button
-              type="button"
-              className="project-button"
-              onClick={onOpenCaseStudy}
-            >
-
-              VIEW CASE STUDY
-
-              <span>
-                ↗
-              </span>
-
-            </button>
-
+          <div className="project-card-copy">
+            <h3>eHRMS platform</h3>
+            <p>enterprise human resource management across employee lifecycle workflows.</p>
+            <div className="project-card-tags"><span>product design</span><span>design systems</span><span>enterprise ux</span></div>
           </div>
+        </article>
 
-        </div>
+        <article className="project-card project-card--ekameva">
+          <div className="project-card-topline"><span>02</span><span>single sign-on</span></div>
+          <div className="project-image-wrap">
+            <img src="/ekameva.png" alt="ekameva single sign-on application interface" />
+          </div>
+          <div className="project-card-copy">
+            <h3>ekameva sso</h3>
+            <p>a unified access experience for multiple enterprise banking applications.</p>
+            <div className="project-card-tags"><span>ux / ui</span><span>workflow design</span></div>
+            <button type="button" className="project-button" onClick={onOpenCaseStudy}>view case study <span aria-hidden="true">↗</span></button>
+          </div>
+        </article>
 
-      </article>
-
+        <article className="project-card project-card--udgam">
+          <div className="project-card-topline"><span>03</span><span>digital portal</span></div>
+          <div className="project-art project-art--udgam" aria-hidden="true">
+            <span className="project-art-overline">learning · discovery · access</span>
+            <strong>udgam<span>.</span></strong>
+            <span className="project-art-route"><i /><i /><i /><i /></span>
+          </div>
+          <div className="project-card-copy">
+            <h3>udgam portal</h3>
+            <p>a clearer portal experience for finding information across a complex service.</p>
+            <div className="project-card-tags"><span>information architecture</span><span>accessibility</span></div>
+          </div>
+        </article>
+      </div>
     </section>
   );
 }

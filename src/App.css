@@ -1,10 +1,26 @@
+:root {
+  color-scheme: light;
+  --surface: #f6f9ff;
+  --surface-soft: #eaf4ff;
+  --surface-blue: #e5f1ff;
+  --surface-white: #ffffff;
+  --ink: #102d54;
+  --ink-soft: #385879;
+  --muted: #597694;
+  --line: rgba(16, 45, 84, 0.13);
+  --blue: #1477f8;
+  --coral: #ff654d;
+  --radius-lg: 22px;
+  --shadow-soft: 0 20px 70px rgba(37, 69, 91, 0.08);
+}
+
 * {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: auto !important;
-  background: #eef1f3;
+  background: var(--surface);
 }
 
 body,
@@ -18,37 +34,50 @@ body,
 body {
   overflow-x: hidden;
   overflow-y: auto;
-  background: #eef1f3;
-  color: #243944;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  text-transform: lowercase;
+  font-family: "Inter", "Aptos", "Segoe UI", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button,
-a {
+a,
+input,
+textarea,
+select {
   font: inherit;
+  text-transform: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.app.continuous-app :is(h1, h2, h3, h4, p, span, small, button, a, label, strong, em, li, dt, dd) {
+  text-transform: lowercase !important;
 }
 
 body.site-scroll-locked {
   overflow: hidden;
 }
 
-/* =========================================================
-   CONTINUOUS AIRPORT STORY
-========================================================= */
-
 .app.continuous-app {
+  text-transform: lowercase;
   position: relative;
   width: 100%;
   min-height: 100vh;
   overflow: visible;
-  background: #eef1f3;
+  background: var(--surface);
 }
 
+/* One persistent canvas and one persistent story layer. */
 .journey-flow {
-  --journey-progress: 0;
   position: relative;
+  isolation: isolate;
   width: 100%;
-  height: 360svh;
+  height: 560svh;
   background: transparent;
 }
 
@@ -69,64 +98,73 @@ body.site-scroll-locked {
 
 .journey-story-sticky {
   z-index: 10;
+  overflow: visible;
   pointer-events: none;
+}
+
+.journey-story-sticky > .hero-view {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
 }
 
 .journey-canvas-sticky canvas,
 .journey-canvas {
   position: absolute !important;
   inset: 0 !important;
+  display: block;
   width: 100% !important;
   height: 100% !important;
-  display: block;
   pointer-events: none;
 }
 
 .work-view {
   position: relative;
+  z-index: 20;
   width: 100%;
   min-height: 100svh;
-  z-index: 20;
-  background: #070000;
   overflow: visible;
+  background: var(--surface);
 }
 
 .work-view::before {
-  content: "";
   position: absolute;
-  top: -14vh;
-  left: 0;
+  top: -11vh;
   right: 0;
-  height: 14vh;
+  left: 0;
+  height: 11vh;
+  content: "";
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(7, 0, 0, 0), #070000 92%);
+  background: linear-gradient(180deg, rgba(244, 247, 249, 0), var(--surface) 94%);
 }
 
 .experience-view {
   position: relative;
+  z-index: 21;
   width: 100%;
   min-height: 100svh;
-  z-index: 21;
-  background: #070707;
+  background: var(--surface-soft);
 }
 
-/* =========================================================
-   CASE STUDY OVERLAY
-========================================================= */
-
 .case-study-view {
+  text-transform: lowercase;
   position: fixed;
   inset: 0;
+  z-index: 200;
   width: 100%;
   height: 100svh;
-  z-index: 200;
-  background: #080808;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--surface);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: opacity 0.35s ease;
+  transition: opacity 280ms ease, visibility 280ms ease;
 }
 
 .case-study-view.active {
@@ -135,104 +173,27 @@ body.site-scroll-locked {
   pointer-events: auto;
 }
 
-/* =========================================================
-   MODERN CURSOR
-========================================================= */
-
-.has-custom-cursor,
-.has-custom-cursor body,
-.has-custom-cursor button,
-.has-custom-cursor a {
-  cursor: none !important;
-}
-
-.cursor-dot,
-.cursor-ring,
-.cursor-label {
-  position: fixed;
-  top: 0;
-  left: 0;
-  display: block;
-  pointer-events: none;
-  z-index: 10000;
-  transform: translate3d(-100px, -100px, 0);
-}
-
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  border-radius: 50%;
-  background: #ffffff;
-  mix-blend-mode: difference;
-}
-
-.cursor-ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: 50%;
-  mix-blend-mode: difference;
-  transition:
-    width 0.25s ease,
-    height 0.25s ease,
-    margin 0.25s ease,
-    background 0.25s ease,
-    border-color 0.25s ease;
-}
-
-.cursor-ring.is-hovering {
-  width: 54px;
-  height: 54px;
-  margin: -27px 0 0 -27px;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 1);
-}
-
-.cursor-ring.is-pressed {
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
-}
-
-.cursor-label {
-  opacity: 0;
-  margin: 12px 0 0 12px;
-  color: #ffffff;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  mix-blend-mode: difference;
-  transition: opacity 0.2s ease;
-}
-
-.cursor-label.is-visible {
-  opacity: 1;
-}
-
-/* =========================================================
-   AUDIO CONTROL
-========================================================= */
-
+/* Optional procedural ambient sound control. */
 .audio-toggle {
   position: fixed;
-  right: 28px;
-  bottom: 24px;
+  right: 24px;
+  bottom: 22px;
   z-index: 500;
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  padding: 9px 12px;
-  border: 1px solid rgba(36, 57, 68, 0.18);
+  padding: 10px 13px;
+  border: 1px solid rgba(16, 45, 84, 0.15);
   border-radius: 999px;
-  background: rgba(245, 248, 249, 0.78);
-  color: #304550;
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink);
+  box-shadow: 0 5px 24px rgba(16, 45, 84, 0.06);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 2.2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  cursor: pointer;
 }
 
 .audio-bars {
@@ -246,34 +207,51 @@ body.site-scroll-locked {
   display: block;
   width: 2px;
   height: 4px;
-  background: currentColor;
   border-radius: 999px;
+  background: currentColor;
 }
 
 .audio-toggle.is-playing .audio-bars i {
   animation: audioBar 900ms ease-in-out infinite alternate;
 }
 
-.audio-toggle.is-playing .audio-bars i:nth-child(2) {
-  animation-delay: -260ms;
-}
-
-.audio-toggle.is-playing .audio-bars i:nth-child(3) {
-  animation-delay: -520ms;
-}
+.audio-toggle.is-playing .audio-bars i:nth-child(2) { animation-delay: -260ms; }
+.audio-toggle.is-playing .audio-bars i:nth-child(3) { animation-delay: -520ms; }
 
 @keyframes audioBar {
   from { transform: scaleY(0.65); }
   to { transform: scaleY(1.45); }
 }
 
-@media (max-width: 800px) {
-  .journey-flow {
-    height: 360svh;
-  }
+.journey-canvas-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: linear-gradient(135deg, #d9ecff, #b9dcff);
+  color: var(--ink);
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+}
 
-  .audio-toggle {
-    right: 16px;
-    bottom: 16px;
+.journey-canvas-fallback span {
+  max-width: 340px;
+  line-height: 1.8;
+}
+
+@media (max-width: 800px) {
+  .journey-flow { height: 560svh; }
+  .audio-toggle { right: 16px; bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

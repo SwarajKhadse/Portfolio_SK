@@ -1,16 +1,23 @@
-# React + Vite
+# Portfolio light-blue v4 — airport journey / camera + landing gear
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Install
 
-Currently, two official plugins are available:
+1. Back up the project's current `src/` folder.
+2. Replace it with this package's `src/` folder.
+3. Keep the root files and `public/` folder from the existing project.
+4. Confirm `public/models/aircraft3.glb` exists. The originally uploaded V1 project included this file. It is used as the landing-gear model so the original `public/models/aircraft.glb` remains untouched.
+5. Run the project using its existing Vite setup.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Changes
 
-## React Compiler
+- Hero composition: larger aircraft, positioned left of the story copy, saturated blue livery, a clear `ideas take flight` headline, and a working “follow the route” CTA.
+- Aircraft: uses `public/models/aircraft3.glb` and adds six torus tyres, hubs, landing struts and braces in code. Tyres roll with journey progress.
+- Camera: aircraft-relative camera framing changes across the journey: close low taxi shot, wide U-turn, elevated angle 5 route shot, runway alignment, rear-follow takeoff and wider in-flight follow.
+- Ground guidance: a blue route line follows the aircraft's ground path.
+- Cursor: custom cursor component and its CSS are removed; the browser's default cursor is used.
+- Visual language: light surfaces, saturated blue, restrained coral, lowercase visual copy, clean spacing.
+- Existing `public/models/aircraft.glb` is not modified.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Validation
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+All JSX/JS files passed a TypeScript syntax transpile check, local relative imports resolved, and all CSS files parsed. A complete browser/Vite run was not possible from the uploaded archive because it did not contain `package.json` or Vite configuration.

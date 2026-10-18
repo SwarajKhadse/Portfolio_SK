@@ -1,8 +1,30 @@
-import {
-    RoundedBox,
-  } from "@react-three/drei";
-  
-  import * as THREE from "three";
+import { useMemo } from "react";
+import { RoundedBox } from "@react-three/drei";
+import { CanvasTexture, SRGBColorSpace } from "three";
+
+function makeLabelTexture(text, { color = "#ffffff", width = 1024, height = 256, fontSize = 92 } = {}) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = color;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+
+  let size = fontSize;
+  context.font = `600 ${size}px Arial, Helvetica, sans-serif`;
+  while (context.measureText(text).width > width * 0.92 && size > 20) {
+    size -= 2;
+    context.font = `600 ${size}px Arial, Helvetica, sans-serif`;
+  }
+  context.fillText(text, width / 2, height / 2);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
   
   
   /* =========================================================
@@ -10,13 +32,13 @@ import {
   ========================================================= */
   
   const C = {
-    apron: "#a8adae",
-    runway: "#292f32",
+    apron: "#b8c3ca",
+    runway: "#899eab",
   
-    terminal: "#d9d9d5",
-    terminalTop: "#eeeeea",
+    terminal: "#dfe7ec",
+    terminalTop: "#f5f8fa",
   
-    glass: "#66858e",
+    glass: "#426b83",
   
     /*
       Gate reference color.
@@ -24,12 +46,12 @@ import {
     */
     dark: "#2C3847",
   
-    metal: "#737d80",
+    metal: "#82929d",
   
-    yellow: "#dfc044",
-    white: "#eceee9",
+    yellow: "#e7b934",
+    white: "#f5f8fa",
   
-    blue: "#87afbb",
+    blue: "#1477f8",
   };
   
   
@@ -56,8 +78,8 @@ import {
         >
           <planeGeometry
             args={[
-              30,
-              34,
+              60,
+              84,
             ]}
           />
   
@@ -83,17 +105,17 @@ import {
         >
           <planeGeometry
             args={[
-              24,
-              15,
+              20,
+              12,
             ]}
           />
   
           <meshPhysicalMaterial
-            color="#90999b"
-            roughness={0.24}
-            clearcoat={0.7}
+            color="#7f929e"
+            roughness={0.36}
+            clearcoat={0.35}
             transparent
-            opacity={0.20}
+            opacity={0.045}
           />
         </mesh>
   
@@ -123,7 +145,7 @@ import {
               <meshBasicMaterial
                 color="#777f82"
                 transparent
-                opacity={0.16}
+                opacity={0.095}
               />
             </mesh>
           )
@@ -155,7 +177,7 @@ import {
               <meshBasicMaterial
                 color="#777f82"
                 transparent
-                opacity={0.13}
+                opacity={0.075}
               />
             </mesh>
           )
@@ -177,7 +199,7 @@ import {
         <mesh
           position={[
             0,
-            -0.376,
+            -0.412,
             -0.8,
           ]}
           rotation={[
@@ -202,8 +224,8 @@ import {
         <mesh
           position={[
             -1.0,
-            -0.375,
-            -4.2,
+            -0.412,
+            0.2,
           ]}
           rotation={[
             -Math.PI / 2,
@@ -214,7 +236,7 @@ import {
           <planeGeometry
             args={[
               0.06,
-              7,
+              6,
             ]}
           />
   
@@ -230,8 +252,8 @@ import {
               key={x}
               position={[
                 x,
-                -0.375,
-                -3,
+                -0.412,
+                1.2,
               ]}
               rotation={[
                 -Math.PI / 2,
@@ -242,7 +264,7 @@ import {
               <planeGeometry
                 args={[
                   0.04,
-                  5,
+                  4,
                 ]}
               />
   
@@ -270,9 +292,9 @@ import {
   
         <mesh
           position={[
-            -1.15,
-            -0.39,
-            -12,
+            -21.0,
+            -0.414,
+            -14.0,
           ]}
           rotation={[
             -Math.PI / 2,
@@ -283,8 +305,8 @@ import {
         >
           <planeGeometry
             args={[
-              9.4,
-              18,
+              6.8,
+              28,
             ]}
           />
   
@@ -296,45 +318,25 @@ import {
         </mesh>
   
   
-        {Array.from({
-          length: 8,
-        }).map((_, index) => (
+        {Array.from({ length: 10 }).map((_, index) => (
           <mesh
             key={index}
-            position={[
-              -1.15,
-              -0.365,
-              -5.3 -
-                index * 1.6,
-            ]}
-            rotation={[
-              -Math.PI / 2,
-              0,
-              0,
-            ]}
+            position={[-21.0, -0.405, -2.0 - index * 2.25]}
+            rotation={[-Math.PI / 2, 0, 0]}
           >
-            <planeGeometry
-              args={[
-                0.28,
-                0.075,
-              ]}
-            />
-  
-            <meshBasicMaterial
-              color={C.yellow}
-            />
+            <planeGeometry args={[0.12, 0.72]} />
+            <meshBasicMaterial color="#f5faff" />
           </mesh>
         ))}
-  
-  
-        {[-5.55, 3.25].map(
+
+        {[-24.4, -17.6].map(
           (x) => (
             <mesh
               key={x}
               position={[
                 x,
-                -0.36,
-                -12,
+                -0.405,
+                -14.0,
               ]}
               rotation={[
                 -Math.PI / 2,
@@ -345,7 +347,7 @@ import {
               <planeGeometry
                 args={[
                   0.05,
-                  18,
+                  28,
                 ]}
               />
   
@@ -361,15 +363,15 @@ import {
           length: 10,
         }).map((_, index) => {
           const z =
-            -5 -
-            index * 1.55;
+            -2.8 -
+            index * 2.35;
   
           return (
             <group key={index}>
               <mesh
                 position={[
-                  -5.1,
-                  -0.23,
+                  -24.4,
+                  -0.385,
                   z,
                 ]}
               >
@@ -388,8 +390,8 @@ import {
   
               <mesh
                 position={[
-                  2.8,
-                  -0.23,
+                  -17.6,
+                  -0.385,
                   z,
                 ]}
               >
@@ -418,203 +420,138 @@ import {
      TERMINAL
   ========================================================= */
   
-  function Terminal() {
+  function TerminalBay({ position, gateLabel, showAirportSign = false }) {
+    const gateLabelTexture = useMemo(
+      () => makeLabelTexture(gateLabel, { color: "#ffffff", width: 512, height: 160, fontSize: 92 }),
+      [gateLabel]
+    );
+    const airportLabelTexture = useMemo(
+      () => makeLabelTexture("international airport", { color: "#215a87", width: 1400, height: 180, fontSize: 72 }),
+      []
+    );
+
     return (
-      <group
-        position={[
-          5.2,
-          0.52,
-          -4.0,
-        ]}
-      >
-  
+      <group position={position}>
         <RoundedBox
-          args={[
-            8.5,
-            3.65,
-            2.15,
-          ]}
+          args={[8.5, 3.65, 2.15]}
           radius={0.045}
           smoothness={5}
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial
-            color={C.terminal}
-            roughness={0.48}
-            metalness={0.03}
-          />
+          <meshStandardMaterial color={C.terminal} roughness={0.62} metalness={0.02} />
         </RoundedBox>
-  
-  
-        <mesh
-          position={[
-            -0.35,
-            0,
-            1.10,
-          ]}
-        >
-          <boxGeometry
-            args={[
-              7.15,
-              2.95,
-              0.045,
-            ]}
-          />
-  
+
+        {/* Cool blue curtain wall across each boarding gate. */}
+        <mesh position={[-0.35, 0, 1.103]}>
+          <boxGeometry args={[7.35, 2.96, 0.05]} />
           <meshPhysicalMaterial
-            color={C.glass}
-            roughness={0.12}
+            color="#426f88"
+            roughness={0.27}
             metalness={0.08}
             transparent
-            opacity={0.64}
+            opacity={0.68}
+            clearcoat={0.45}
+            clearcoatRoughness={0.2}
           />
         </mesh>
-  
-  
-        {[
-          -3.35,
-          -2.35,
-          -1.35,
-          -0.35,
-          0.65,
-          1.65,
-          2.65,
-        ].map((x) => (
-          <mesh
-            key={x}
-            position={[
-              x,
-              0,
-              1.13,
-            ]}
-          >
-            <boxGeometry
-              args={[
-                0.045,
-                3,
-                0.05,
-              ]}
-            />
-  
-            <meshStandardMaterial
-              color="#e9ebe8"
-              roughness={0.30}
-            />
-          </mesh>
-        ))}
-  
-  
+
+        {Array.from({ length: 11 }).map((_, index) => {
+          const x = -3.85 + index * 0.7;
+          return (
+            <mesh key={index} position={[x, 0, 1.135]}>
+              <boxGeometry args={[0.045, 3.02, 0.055]} />
+              <meshStandardMaterial color="#edf7ff" roughness={0.32} metalness={0.08} />
+            </mesh>
+          );
+        })}
+
         <RoundedBox
-          position={[
-            0,
-            1.90,
-            0,
-          ]}
-          args={[
-            8.8,
-            0.17,
-            2.30,
-          ]}
+          position={[0, 1.9, 0]}
+          args={[8.8, 0.17, 2.3]}
           radius={0.03}
           smoothness={4}
+          castShadow
         >
-          <meshStandardMaterial
-            color={C.terminalTop}
-            roughness={0.27}
-          />
+          <meshStandardMaterial color={C.terminalTop} roughness={0.3} />
         </RoundedBox>
-  
-  
-        {/* GATE TOWER - EXACT REFERENCE COLOR */}
-  
+
+        {/* Slim blue fascia gives the terminal a designed silhouette rather than a grey block. */}
+        <mesh position={[0, 1.72, 1.12]}>
+          <boxGeometry args={[8.3, 0.09, 0.08]} />
+          <meshStandardMaterial color="#2b83c5" roughness={0.42} metalness={0.04} />
+        </mesh>
+
         <RoundedBox
-          position={[
-            3.05,
-            0,
-            1.18,
-          ]}
-          args={[
-            1.12,
-            3.55,
-            0.18,
-          ]}
+          position={[-3.05, 0, 1.18]}
+          args={[1.18, 3.55, 0.18]}
           radius={0.02}
           smoothness={3}
           castShadow
         >
-          <meshStandardMaterial
-            color={C.dark}
-            roughness={0.34}
-            metalness={0.06}
-          />
+          <meshStandardMaterial color="#365a73" roughness={0.38} metalness={0.05} />
         </RoundedBox>
-  
-  
-        <mesh
-          position={[
-            3.05,
-            0.42,
-            1.30,
-          ]}
-        >
-          <planeGeometry
-            args={[
-              0.62,
-              0.40,
-            ]}
-          />
-  
+
+        <mesh position={[-3.05, 0.42, 1.30]}>
+          <planeGeometry args={[1.06, 0.42]} />
+          <meshBasicMaterial color="#1477f8" toneMapped={false} />
+        </mesh>
+        <mesh position={[-3.05, 0.42, 1.321]}>
+          <planeGeometry args={[0.98, 0.30]} />
           <meshBasicMaterial
-            color="#9fc6d3"
+            map={gateLabelTexture}
+            transparent
+            toneMapped={false}
+            depthWrite={false}
           />
         </mesh>
-  
-  
-        {[-2.4, -0.8, 0.8, 2.2].map(
-          (x) => (
-            <mesh
-              key={x}
-              position={[
-                x,
-                2.08,
-                0,
-              ]}
-            >
-              <boxGeometry
-                args={[
-                  0.60,
-                  0.16,
-                  0.42,
-                ]}
-              />
-  
-              <meshStandardMaterial
-                color="#adb5b7"
-                roughness={0.58}
+
+        {[-2.4, -0.8, 0.8, 2.2].map((x) => (
+          <mesh key={x} position={[x, 2.08, 0]}>
+            <boxGeometry args={[0.6, 0.16, 0.42]} />
+            <meshStandardMaterial color="#b7cedf" roughness={0.56} />
+          </mesh>
+        ))}
+
+        {showAirportSign && (
+          <group position={[0, 2.16, 1.16]}>
+            <RoundedBox args={[4.7, 0.48, 0.08]} radius={0.05} smoothness={4}>
+              <meshStandardMaterial color="#f7fbff" roughness={0.32} />
+            </RoundedBox>
+            <mesh position={[0, 0, 0.052]}>
+              <planeGeometry args={[4.42, 0.34]} />
+              <meshBasicMaterial
+                map={airportLabelTexture}
+                transparent
+                toneMapped={false}
+                depthWrite={false}
               />
             </mesh>
-          )
+          </group>
         )}
-  
       </group>
     );
   }
-  
-  
+
+  function Terminal() {
+    return (
+      <group>
+        <TerminalBay position={[-12.6, 1.405, -4.0]} gateLabel="gate 1" />
+        <TerminalBay position={[-4.2, 1.405, -4.0]} gateLabel="gate 2" showAirportSign />
+        <TerminalBay position={[4.2, 1.405, -4.0]} gateLabel="gate 3" />
+        <TerminalBay position={[12.6, 1.405, -4.0]} gateLabel="gate 4" />
+      </group>
+    );
+  }
+
+
   /* =========================================================
      JET BRIDGE
   ========================================================= */
   
-  function JetBridge() {
+  function JetBridge({ position = [2.15, 1.035, -1.25] }) {
     return (
-      <group
-        position={[
-          3.2,
-          0.98,
-          -1.25,
-        ]}
-      >
+      <group position={position} rotation={[0, Math.PI / 2, 0]}>
   
         <RoundedBox
           args={[
@@ -627,9 +564,9 @@ import {
           castShadow
         >
           <meshStandardMaterial
-            color="#8e999c"
-            roughness={0.38}
-            metalness={0.10}
+            color="#cfd9df"
+            roughness={0.46}
+            metalness={0.06}
           />
         </RoundedBox>
   
@@ -650,10 +587,10 @@ import {
           />
   
           <meshPhysicalMaterial
-            color="#75939c"
-            roughness={0.12}
+            color="#476c82"
+            roughness={0.24}
             transparent
-            opacity={0.65}
+            opacity={0.62}
           />
         </mesh>
   
@@ -867,7 +804,7 @@ import {
         <mesh
           position={[
             0,
-            0.14,
+            0.20,
             0,
           ]}
         >
@@ -889,7 +826,7 @@ import {
         <mesh
           position={[
             0,
-            0.025,
+            0.015,
             0,
           ]}
         >
@@ -917,58 +854,83 @@ import {
   
   function BackgroundAirport() {
     return (
-      <group
-        position={[
-          0,
-          -0.42,
-          -21,
-        ]}
-      >
-        <RoundedBox
-          args={[
-            20,
-            2.2,
-            1.2,
-          ]}
-          radius={0.04}
-          smoothness={4}
-        >
-          <meshStandardMaterial
-            color="#bac2c4"
-            roughness={0.85}
-            transparent
-            opacity={0.35}
-          />
-        </RoundedBox>
-  
-  
-        <mesh
-          position={[
-            0,
-            0.2,
-            0.63,
-          ]}
-        >
-          <boxGeometry
-            args={[
-              18,
-              1.35,
-              0.035,
-            ]}
-          />
-  
-          <meshPhysicalMaterial
-            color="#78949c"
-            roughness={0.20}
-            transparent
-            opacity={0.25}
-          />
-        </mesh>
+      <group>
+        {/* A continuous distant concourse gives the airport a believable horizon. */}
+        <group position={[0, -0.42, -37.5]}>
+          <RoundedBox
+            position={[0, 1.45, 0]}
+            args={[42, 2.9, 1.7]}
+            radius={0.08}
+            smoothness={5}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial color="#d5e0e7" roughness={0.68} metalness={0.025} />
+          </RoundedBox>
+
+          <mesh position={[0, 1.45, 0.865]}>
+            <boxGeometry args={[40.8, 2.05, 0.045]} />
+            <meshPhysicalMaterial
+              color="#426b83"
+              roughness={0.3}
+              metalness={0.08}
+              transparent
+              opacity={0.58}
+              clearcoat={0.28}
+            />
+          </mesh>
+
+          {Array.from({ length: 29 }).map((_, index) => (
+            <mesh key={index} position={[-19.6 + index * 1.4, 1.45, 0.895]}>
+              <boxGeometry args={[0.035, 2.1, 0.045]} />
+              <meshStandardMaterial color="#edf4f8" roughness={0.38} metalness={0.04} />
+            </mesh>
+          ))}
+
+          <RoundedBox
+            position={[0, 2.93, -0.02]}
+            args={[42.8, 0.15, 2.05]}
+            radius={0.035}
+            smoothness={4}
+            castShadow
+          >
+            <meshStandardMaterial color="#f5f8fa" roughness={0.38} />
+          </RoundedBox>
+
+          <mesh position={[0, 2.58, 0.88]}>
+            <boxGeometry args={[41.2, 0.07, 0.055]} />
+            <meshStandardMaterial color="#2b83c5" roughness={0.42} />
+          </mesh>
+
+          {[-16, -10, -4, 2, 8, 14].map((x) => (
+            <mesh key={x} position={[x, 3.08, -0.12]}>
+              <boxGeometry args={[1.55, 0.18, 0.72]} />
+              <meshStandardMaterial color="#b5c5cf" roughness={0.62} />
+            </mesh>
+          ))}
+        </group>
+
+        {/* Control tower: narrow shaft, glazed cab and a thin roof. */}
+        <group position={[20.5, -0.42, -32]}>
+          <RoundedBox position={[0, 2.1, 0]} args={[0.72, 4.2, 0.82]} radius={0.025} smoothness={4}>
+            <meshStandardMaterial color="#d5e0e7" roughness={0.6} />
+          </RoundedBox>
+          <RoundedBox position={[0, 4.35, 0]} args={[1.95, 0.72, 1.25]} radius={0.045} smoothness={5}>
+            <meshStandardMaterial color="#e5edf2" roughness={0.36} metalness={0.04} />
+          </RoundedBox>
+          <mesh position={[0, 4.36, 0.64]}>
+            <boxGeometry args={[1.68, 0.43, 0.035]} />
+            <meshPhysicalMaterial color="#345f78" roughness={0.2} metalness={0.08} transparent opacity={0.82} />
+          </mesh>
+          <RoundedBox position={[0, 4.76, 0]} args={[2.08, 0.1, 1.38]} radius={0.025} smoothness={4}>
+            <meshStandardMaterial color="#f5f8fa" roughness={0.34} />
+          </RoundedBox>
+        </group>
       </group>
     );
   }
-  
-  
+
+
   /* =========================================================
      WORLD
   ========================================================= */
@@ -987,22 +949,25 @@ import {
   
         <Terminal />
   
-        <JetBridge />
+        <JetBridge position={[-12.6, 1.035, -1.25]} />
+        <JetBridge position={[-4.2, 1.035, -1.25]} />
+        <JetBridge position={[4.2, 1.035, -1.25]} />
+        <JetBridge position={[12.6, 1.035, -1.25]} />
   
   
         <GroundCart
           position={[
-            -3.2,
-            -0.08,
-            -1.3,
+            -13.8,
+            -0.38,
+            -0.7,
           ]}
         />
   
         <GroundCart
           position={[
-            -3.8,
-            -0.08,
-            -2.0,
+            -14.4,
+            -0.38,
+            -1.4,
           ]}
           scale={0.72}
         />
@@ -1010,17 +975,17 @@ import {
   
         <Cone
           position={[
-            -2.0,
-            -0.25,
-            -0.75,
+            -10.8,
+            -0.42,
+            0.55,
           ]}
         />
   
         <Cone
           position={[
-            2.45,
-            -0.25,
-            0.50,
+            2.3,
+            -0.42,
+            1.0,
           ]}
         />
   
