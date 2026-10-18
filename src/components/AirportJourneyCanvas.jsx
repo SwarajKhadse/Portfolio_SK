@@ -31,8 +31,10 @@ const HERO_AIRCRAFT_POSITION = new THREE.Vector3(-5.5, -0.405, 2.8);
 // horizontal, left-to-right gate apron shown in the wireframe.
 const HERO_AIRCRAFT_ROTATION_Y = -0.10;
 // Step back enough to show the terminal, gates and apron around the aircraft.
-const HERO_CAMERA = new THREE.Vector3(0, 7.1, 20.5);
-const HERO_TARGET = new THREE.Vector3(0, 0.9, -3.2);
+const HERO_CAMERA = new THREE.Vector3(0, 6.5, 20.5);
+// Aim slightly higher in the opening shot so the airport sits lower on screen
+// and leaves breathing room beneath the headline; scrolling blends into the route camera.
+const HERO_TARGET = new THREE.Vector3(0, 2.0, -3.2);
 
 const STAGE_PROGRESS = {
   gate: 0.18,
@@ -608,7 +610,7 @@ function JourneyHeadlineBackdrop({ scrollPositionRef, journeyRef }) {
       const progress = getJourneyProgress(scrollPositionRef, journeyRef);
       const fade = THREE.MathUtils.smoothstep(progress, 0.025, 0.19);
       if (headlineRef.current) {
-        headlineRef.current.style.opacity = String(1 - fade);
+        headlineRef.current.style.opacity = String(0.7 * (1 - fade));
       }
       frame = window.requestAnimationFrame(updateOpacity);
     };
@@ -625,18 +627,19 @@ function JourneyHeadlineBackdrop({ scrollPositionRef, journeyRef }) {
       viewBox="0 0 1920 420"
       preserveAspectRatio="none"
       style={{
-        opacity: 1,
+        opacity: 0.7,
         transition: "opacity 120ms linear",
-        willChange: "opacity",
+        transform: "translateY(-20px)",
+        willChange: "opacity, transform",
       }}
     >
       <defs>
         {/* Soft blue tint inside the outline, kept light so the airport remains visible through it. */}
         <linearGradient id="headline-text-gradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#eaf7ff" stopOpacity="0.24" />
-          <stop offset="36%" stopColor="#c5e4fb" stopOpacity="0.19" />
-          <stop offset="68%" stopColor="#a9d3f2" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#e7f5ff" stopOpacity="0.04" />
+          <stop offset="0%" stopColor="#f0f8ff" stopOpacity="0.34" />
+          <stop offset="36%" stopColor="#c5e4fb" stopOpacity="0.27" />
+          <stop offset="68%" stopColor="#a8d4f4" stopOpacity="0.17" />
+          <stop offset="100%" stopColor="#edf7ff" stopOpacity="0.06" />
         </linearGradient>
         {/* Fade the whole headline vertically: crisp at the top, dissolving toward the bottom. */}
         <linearGradient id="headline-vertical-fade" x1="0" y1="0" x2="0" y2="1">

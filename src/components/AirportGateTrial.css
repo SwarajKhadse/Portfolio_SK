@@ -251,10 +251,10 @@
   .story-card, .text-link, .portfolio-nav button::after { animation: none; transition: none; }
 }
 
-/* Oversized outline title sits behind the 3D terminal with breathing room below the header. */
+/* Lift the outlined title slightly to increase separation from the terminal. */
 .journey-headline-backdrop {
   position: absolute;
-  top: clamp(58px, 6.8vh, 82px);
+  top: clamp(56px, 6.2vh, 76px);
   left: 0;
   z-index: 0;
   display: block;
@@ -265,5 +265,5 @@
 }
 
 @media (max-width: 720px) {
-  .journey-headline-backdrop { top: 118px; width: 125%; left: -12.5%; }
+  .journey-headline-backdrop { top: 108px; width: 125%; left: -12.5%; }
 }
