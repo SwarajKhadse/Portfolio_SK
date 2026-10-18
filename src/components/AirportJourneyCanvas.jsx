@@ -1,815 +1,1136 @@
-import React, {
-  Component,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
-
+import { Suspense, useMemo } from "react";
 import {
-  Canvas,
-  useFrame,
-  useThree,
-} from "@react-three/fiber";
-
-import {
-  ContactShadows,
-  Environment,
-  Line,
-  useGLTF,
-} from "@react-three/drei";
-
-import * as THREE from "three";
-
-import GatePlatform from "./GatePlatform.jsx";
-
-// Restore the original textured aircraft used in the earlier, better-looking render.
-const AIRCRAFT_URL = "/models/aircraft.glb";
-
-const HERO_AIRCRAFT_POSITION = new THREE.Vector3(-5.5, -0.405, 2.8);
-// The original textured model points along local -Z; this yaw aligns it with the
-// horizontal, left-to-right gate apron shown in the wireframe.
-const HERO_AIRCRAFT_ROTATION_Y = -0.10;
-// Step back enough to show the terminal, gates and apron around the aircraft.
-const HERO_CAMERA = new THREE.Vector3(0, 6.5, 20.5);
-// Aim slightly higher in the opening shot so the airport sits lower on screen
-// and leaves breathing room beneath the headline; scrolling blends into the route camera.
-const HERO_TARGET = new THREE.Vector3(0, 2.0, -3.2);
-
-const STAGE_PROGRESS = {
-  gate: 0.18,
-  pushback: 0.27,
-  taxi: 0.38,
-  uTurn: 0.52,
-  runway: 0.72,
-  takeoff: 0.88,
-};
-
-const WORLD_UP = new THREE.Vector3(0, 1, 0);
-const LOCAL_PITCH_AXIS = new THREE.Vector3(0, 0, 1);
-const LOCAL_FUSELAGE_AXIS = new THREE.Vector3(1, 0, 0);
-
-function smoothWindow(value, start, end, feather = 0.025) {
-  const enter = THREE.MathUtils.smoothstep(value, start, start + feather);
-  const leave = 1 - THREE.MathUtils.smoothstep(value, end - feather, end);
-  return enter * leave;
-}
-
-class AircraftErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { failed: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch(error) {
-    console.error(
-      "Airport aircraft model failed to load. The airport scene will remain visible.",
-      error
-    );
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
-
-function applyPrimaryLivery(child) {
-  if (!child.material) return;
-
-  const materials = Array.isArray(child.material)
-    ? child.material
-    : [child.material];
-
-  materials.forEach((material) => {
-    if (!material.color) return;
-
-    // The preferred aircraft has a baked livery texture. Preserve it intact.
-    if (material.map) {
-      material.needsUpdate = true;
-      return;
-    }
-
-    const name = `${material.name || ""} ${
-      child.name || ""
-    }`.toLowerCase();
-
-    if (name.includes("bluestripe") || (child.name || "").toLowerCase().includes("bluestripe")) {
-      material.color.set("#0879f9");
-      material.roughness = 0.34;
-      material.needsUpdate = true;
-      return;
-    }
-
-    if (
-      name.includes("window") ||
-      name.includes("glass") ||
-      name.includes("windshield") ||
-      name.includes("cockpit") ||
-      material.transparent
-    ) {
-      return;
-    }
-
-    const hsl = {};
-    material.color.getHSL(hsl);
-
-    const isBlueLivery =
-      hsl.h >= 0.47 &&
-      hsl.h <= 0.72 &&
-      hsl.s >= 0.28 &&
-      hsl.l >= 0.2 &&
-      hsl.l <= 0.82;
-
-    if (!isBlueLivery) return;
-
-    material.color.set("#176cff");
-    material.roughness = 0.3;
-
-    if ("metalness" in material) {
-      material.metalness = 0.04;
-    }
-
-    material.needsUpdate = true;
-  });
-}
-
-function normalizeAircraft(source, targetLength = 8.2) {
-  const model = source.clone(true);
-
-  model.traverse((child) => {
-    if (!child.isMesh) return;
-
-    child.visible = true;
-    child.castShadow = true;
-    child.receiveShadow = true;
-
-    applyPrimaryLivery(child);
-
-    if (child.material) {
-      child.material.needsUpdate = true;
-      if ("envMapIntensity" in child.material) {
-        child.material.envMapIntensity = 1.05;
-      }
-    }
-  });
-
-  const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-
-  box.getSize(size);
-  box.getCenter(center);
-
-  const longest = Math.max(size.x, size.y, size.z);
-  if (!longest || !Number.isFinite(longest)) return model;
-
-  const scale = targetLength / longest;
-  model.scale.setScalar(scale);
-  model.position.set(
-    -center.x * scale,
-    -center.y * scale,
-    -center.z * scale
-  );
-
-  const grounded = new THREE.Box3().setFromObject(model);
-  model.position.y -= grounded.min.y;
-
-  return model;
-}
+    RoundedBox,
+    Text,
+  } from "@react-three/drei";
+  
+  import * as THREE from "three";
+  
+  
+  /* =========================================================
+     COLORS
+  ========================================================= */
+  
+  const C = {
+    apron: "#34353b",
+    runway: "#34353b",
+  
+    terminal: "#dfe7ec",
+    terminalTop: "#f5f8fa",
+  
+    glass: "#426b83",
+  
+    /*
+      Gate reference color.
+      Use the same tone on aircraft livery.
+    */
+    dark: "#2C3847",
+  
+    metal: "#82929d",
+  
+    yellow: "#e7b934",
+    white: "#f5f8fa",
+  
+    blue: "#1477f8",
+  };
+  
+  
 
   /*
-   * The route is laid out in real scene space rather than passing through the gates:
-   * gate apron → broad foreground U-turn → west-side taxiway → runway → climb.
-   * The long return lane stays in front of the terminal, then turns outside the
-   * west end of the concourse before aligning with the runway.
+   * Procedural charcoal asphalt: fine aggregate grain, gentle mottling, and
+   * low-contrast tire/wear marks. This avoids a flat single-color ground plane.
    */
-  function createJourneyCurve() {
-    return new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(-5.5, -0.405, 2.8),
-        new THREE.Vector3(-3.6, -0.405, 2.9),
-        new THREE.Vector3(-1.2, -0.405, 2.95),
-        new THREE.Vector3(1.4, -0.405, 2.9),
-        new THREE.Vector3(4.1, -0.405, 2.85),
-        new THREE.Vector3(6.4, -0.405, 2.75),
-        new THREE.Vector3(8.5, -0.405, 2.65),
-        new THREE.Vector3(9.6, -0.405, 3.1),
-        new THREE.Vector3(10.35, -0.405, 4.1),
-        new THREE.Vector3(10.6, -0.405, 5.4),
-        new THREE.Vector3(10.1, -0.405, 6.7),
-        new THREE.Vector3(8.9, -0.405, 7.65),
-        new THREE.Vector3(7.2, -0.405, 8.2),
-        new THREE.Vector3(4.8, -0.405, 8.35),
-        new THREE.Vector3(1.8, -0.405, 8.35),
-        new THREE.Vector3(-1.5, -0.405, 8.35),
-        new THREE.Vector3(-4.8, -0.405, 8.35),
-        new THREE.Vector3(-8.1, -0.405, 8.35),
-        new THREE.Vector3(-11.2, -0.405, 8.15),
-        new THREE.Vector3(-14.2, -0.405, 7.55),
-        new THREE.Vector3(-16.8, -0.405, 6.4),
-        new THREE.Vector3(-18.8, -0.405, 4.7),
-        new THREE.Vector3(-20.1, -0.405, 2.5),
-        new THREE.Vector3(-20.8, -0.405, 0.2),
-        new THREE.Vector3(-21.0, -0.405, -2.5),
-        new THREE.Vector3(-21.0, -0.405, -5.0),
-        new THREE.Vector3(-21.0, -0.405, -7.5),
-        new THREE.Vector3(-21.0, -0.405, -10.0),
-        new THREE.Vector3(-21.0, -0.405, -12.5),
-        new THREE.Vector3(-21.0, -0.405, -15.0),
-        new THREE.Vector3(-21.0, -0.405, -17.5),
-        new THREE.Vector3(-21.0, -0.405, -20.0),
-        new THREE.Vector3(-21.0, -0.405, -22.0),
-        new THREE.Vector3(-21.0, -0.39, -23.8),
-        new THREE.Vector3(-20.9, -0.24, -25.2),
-        new THREE.Vector3(-20.7, 0.12, -26.8),
-        new THREE.Vector3(-20.4, 0.72, -28.5),
-        new THREE.Vector3(-19.9, 1.58, -30.3),
-        new THREE.Vector3(-19.2, 2.65, -32.2),
-        new THREE.Vector3(-18.4, 3.85, -34.2),
-      ],
-      false,
-      "catmullrom",
-      0.16
-    );
-  }
+  function createAsphaltTexture(repeatX = 5, repeatY = 7, seed = 1337) {
+    if (typeof document === "undefined") return null;
 
-function getJourneyProgress(scrollPositionRef, journeyRef) {
-  const section = journeyRef?.current;
-  if (!section) return 0;
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
 
-  const scroll = scrollPositionRef?.current ?? window.scrollY ?? 0;
-  const sectionTop = section.getBoundingClientRect().top + scroll;
-
-  const scrollDistance = Math.max(
-    1,
-    section.offsetHeight - window.innerHeight
-  );
-
-  return THREE.MathUtils.clamp(
-    (scroll - sectionTop) / scrollDistance,
-    0,
-    1
-  );
-}
-
-function getTravelProgress(pageProgress) {
-  // Keep the aircraft parked for the gate hero. Aircraft movement begins at
-  // the exact same scroll threshold as the first camera/story hand-off.
-  const start = STAGE_PROGRESS.gate;
-  return THREE.MathUtils.clamp(
-    (pageProgress - start) / (1 - start),
-    0,
-    1
-  );
-}
-
-function JourneyAircraft({
-  scrollPositionRef,
-  journeyRef,
-  journeyCurve,
-}) {
-  const aircraftRef = useRef(null);
-  const { scene } = useGLTF(AIRCRAFT_URL);
-
-  const model = useMemo(
-    () => normalizeAircraft(scene, 7.7),
-    [scene]
-  );
-
-
-  const point = useMemo(() => new THREE.Vector3(), []);
-  const ahead = useMemo(() => new THREE.Vector3(), []);
-  const direction = useMemo(() => new THREE.Vector3(), []);
-  const desiredPosition = useMemo(() => new THREE.Vector3(), []);
-  const yawQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const pitchQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const bankQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const desiredQuaternion = useMemo(() => new THREE.Quaternion(), []);
-  const rotationOffset = useMemo(() => {
-    const start = journeyCurve.getPointAt(0);
-    const next = journeyCurve.getPointAt(0.008);
-    const initialDirection = new THREE.Vector3().subVectors(next, start).normalize();
-    const initialHeading = Math.atan2(-initialDirection.z, initialDirection.x);
-    return HERO_AIRCRAFT_ROTATION_Y - initialHeading;
-  }, [journeyCurve]);
-
-  useFrame((state, delta) => {
-    const aircraft = aircraftRef.current;
-    if (!aircraft) return;
-
-    const pageProgress = getJourneyProgress(
-      scrollPositionRef,
-      journeyRef
-    );
-
-    const travelProgress = getTravelProgress(pageProgress);
-
-
-    // Arc-length progress keeps aircraft movement proportional to scroll.
-    journeyCurve.getPointAt(travelProgress, point);
-
-    journeyCurve.getPointAt(
-      Math.min(1, travelProgress + 0.008),
-      ahead
-    );
-
-    direction.subVectors(ahead, point).normalize();
-
-    const curveYaw = Math.atan2(-direction.z, direction.x);
-
-    // A subtle bank only during the two actual turns: the gate-end U-turn and
-    // the west-side alignment onto the runway. Straight taxiing stays level.
-    const gateTurn = smoothWindow(travelProgress, 0.15, 0.27);
-    const runwayTurn = smoothWindow(travelProgress, 0.49, 0.62);
-    const bank = Math.max(gateTurn, runwayTurn) * 0.022;
-
-    // Aircraft pitch follows the 3D route tangent. The extra pitch is introduced
-    // only as the aircraft reaches the runway's rotation point.
-    const horizontalSpeed = Math.max(0.0001, Math.hypot(direction.x, direction.z));
-    const routePitch = Math.atan2(direction.y, horizontalSpeed);
-    const rotationProgress = THREE.MathUtils.smoothstep(
-      THREE.MathUtils.clamp((travelProgress - 0.865) / 0.09, 0, 1),
-      0,
-      1
-    );
-    const pitch = routePitch + rotationProgress * 0.035;
-
-    const subtleBob = Math.sin(state.clock.elapsedTime * 1.25) * 0.0012;
-    desiredPosition.set(point.x, point.y + subtleBob, point.z);
-
-    const positionDamping = 1 - Math.exp(-10 * Math.max(delta, 0.001));
-    aircraft.position.lerp(desiredPosition, positionDamping);
-
-    // This GLB's fuselage runs along local +X. Compose yaw, local pitch and
-    // local-axis bank so the nose follows the taxi path instead of turning sideways.
-    const desiredYaw = curveYaw + rotationOffset;
-    yawQuaternion.setFromAxisAngle(WORLD_UP, desiredYaw);
-    pitchQuaternion.setFromAxisAngle(LOCAL_PITCH_AXIS, pitch);
-    bankQuaternion.setFromAxisAngle(LOCAL_FUSELAGE_AXIS, bank);
-    desiredQuaternion.copy(yawQuaternion)
-      .multiply(pitchQuaternion)
-      .multiply(bankQuaternion);
-    aircraft.quaternion.slerp(
-      desiredQuaternion,
-      1 - Math.exp(-7 * Math.max(delta, 0.001))
-    );
-  });
-
-  return (
-    <group
-      ref={aircraftRef}
-      position={HERO_AIRCRAFT_POSITION}
-      rotation={[0, HERO_AIRCRAFT_ROTATION_Y, 0]}
-    >
-      <primitive object={model} />
-    </group>
-  );
-}
-
-const CAMERA_KEYFRAMES = [
-  // angle 2: low side view, close enough to read the aircraft but not crop its wings.
-  { progress: 0.18, side: 8.8, height: 4.0, behind: 5.5, lead: 0.6, aimY: 2.2, fov: 43 },
-  // angle 3: pull back to reveal the gate row, apron and taxi markings together.
-  { progress: 0.34, side: 10.1, height: 4.8, behind: 6.2, lead: 0.8, aimY: 2.3, fov: 45 },
-  // angle 4: wide, elevated view of the full turn; keep the target close to the aircraft.
-  { progress: 0.48, side: 10.5, height: 6.2, behind: 6.0, lead: 3.1, aimY: 2.8, fov: 48 },
-  // angle 5: elevated three-quarter shot that includes the route and runway entrance.
-  { progress: 0.67, side: 6.8, height: 5.2, behind: 5.5, lead: 2.0, aimY: 2.0, fov: 46 },
-  // runway alignment: lower and tighten the frame without pushing the aircraft out of view.
-  { progress: 0.78, side: 2.7, height: 3.8, behind: 8.4, lead: 3.5, aimY: 1.1, fov: 42 },
-  // takeoff: transition into a genuine rear-follow composition with sky above the aircraft.
-  { progress: 0.88, side: 0.15, height: 4.0, behind: 9.8, lead: 4.4, aimY: 0.8, fov: 42 },
-  { progress: 1.0, side: 0.15, height: 4.8, behind: 12.4, lead: 5.2, aimY: 0.9, fov: 43 },
-];
-
-function copyCameraConfig(source, output) {
-  output.progress = source.progress;
-  output.side = source.side;
-  output.height = source.height;
-  output.behind = source.behind;
-  output.lead = source.lead;
-  output.aimY = source.aimY;
-  output.fov = source.fov;
-  return output;
-}
-
-function interpolateCameraConfig(progress, output) {
-  if (progress <= CAMERA_KEYFRAMES[0].progress) {
-    return copyCameraConfig(CAMERA_KEYFRAMES[0], output);
-  }
-
-  for (let index = 0; index < CAMERA_KEYFRAMES.length - 1; index += 1) {
-    const start = CAMERA_KEYFRAMES[index];
-    const end = CAMERA_KEYFRAMES[index + 1];
-
-    if (progress <= end.progress) {
-      const amount = THREE.MathUtils.smoothstep(
-        (progress - start.progress) / (end.progress - start.progress),
-        0,
-        1
-      );
-
-      output.progress = progress;
-      ["side", "height", "behind", "lead", "aimY", "fov"].forEach((key) => {
-        output[key] = THREE.MathUtils.lerp(start[key], end[key], amount);
-      });
-      return output;
-    }
-  }
-
-  return copyCameraConfig(CAMERA_KEYFRAMES[CAMERA_KEYFRAMES.length - 1], output);
-}
-
-function JourneyCamera({ scrollPositionRef, journeyRef, journeyCurve }) {
-  const { size } = useThree();
-  const mouse = useRef({ x: 0, y: 0 });
-  const currentPosition = useRef(HERO_CAMERA.clone());
-  const currentTarget = useRef(HERO_TARGET.clone());
-
-  const aircraftPoint = useMemo(() => new THREE.Vector3(), []);
-  const aircraftAhead = useMemo(() => new THREE.Vector3(), []);
-  const tangent = useMemo(() => new THREE.Vector3(), []);
-  const right = useMemo(() => new THREE.Vector3(), []);
-  const candidateSide = useMemo(() => new THREE.Vector3(), []);
-  const cameraSide = useRef(new THREE.Vector3(0, 0, 1));
-  const outerApronSide = useMemo(() => new THREE.Vector3(0, 0, 1), []);
-  const desiredSide = useMemo(() => new THREE.Vector3(), []);
-  const desired = useMemo(() => new THREE.Vector3(), []);
-  const target = useMemo(() => new THREE.Vector3(), []);
-  const lookAhead = useMemo(() => new THREE.Vector3(), []);
-  const up = useMemo(() => new THREE.Vector3(0, 1, 0), []);
-
-  const rig = useMemo(() => ({
-    progress: 0.12,
-    side: 4.3,
-    height: 2.7,
-    behind: 5.4,
-    lead: 2.4,
-    aimY: 0.24,
-    fov: 32,
-  }), []);
-
-  useEffect(() => {
-    const onMove = (event) => {
-      mouse.current.x = (event.clientX / window.innerWidth - 0.5) * 2;
-      mouse.current.y = (event.clientY / window.innerHeight - 0.5) * 2;
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, []);
-
-  useFrame(({ camera }, delta) => {
-    const pageProgress = getJourneyProgress(scrollPositionRef, journeyRef);
-    const travelProgress = getTravelProgress(pageProgress);
-    const mobile = size.width < 720;
-
-    journeyCurve.getPointAt(travelProgress, aircraftPoint);
-    journeyCurve.getPointAt(Math.min(1, travelProgress + 0.012), aircraftAhead);
-    tangent.subVectors(aircraftAhead, aircraftPoint).normalize();
-    right.crossVectors(tangent, up).normalize();
-
-    // Keep the camera on the open apron side while the aircraft passes the gates
-    // and completes its U-turn. Only after the aircraft clears the terminal's west
-    // end do we blend toward a tangent-relative side for runway/takeoff framing.
-    if (right.lengthSq() > 0.0001) {
-      candidateSide.copy(right);
-      if (candidateSide.dot(outerApronSide) < 0) candidateSide.negate();
-
-      const runwaySideBlend = THREE.MathUtils.smoothstep(
-        (pageProgress - 0.78) / 0.12,
-        0,
-        1
-      );
-      desiredSide.copy(outerApronSide).lerp(candidateSide, runwaySideBlend).normalize();
-
-      const sideDamping = 1 - Math.exp(-4.4 * Math.max(delta, 0.001));
-      cameraSide.current.lerp(desiredSide, sideDamping).normalize();
-    }
-
-    if (pageProgress <= STAGE_PROGRESS.gate) {
-      desired.copy(HERO_CAMERA);
-      if (mobile) {
-        desired.z += 6.5;
-        desired.y += 1.8;
-        desired.x += 0.3;
-      } else {
-        desired.x += mouse.current.x * 0.035;
-        desired.y -= mouse.current.y * 0.025;
-      }
-      target.copy(HERO_TARGET);
-      camera.fov = THREE.MathUtils.lerp(camera.fov, mobile ? 51 : 48, 0.08);
-    } else {
-      interpolateCameraConfig(pageProgress, rig);
-
-      const side = rig.side * (mobile ? 0.42 : 1);
-      const behind = rig.behind + (mobile ? 1.8 : 0);
-      const height = rig.height * (mobile ? 0.82 : 1);
-
-      desired.copy(aircraftPoint)
-        .addScaledVector(cameraSide.current, side)
-        .addScaledVector(tangent, -behind);
-      desired.y = aircraftPoint.y + height;
-
-      lookAhead.copy(aircraftPoint).addScaledVector(tangent, rig.lead);
-      lookAhead.y += rig.aimY;
-      target.copy(lookAhead);
-
-      // Blend the hero framing into the first camera move without a snap.
-      const blend = THREE.MathUtils.smoothstep(
-        (pageProgress - STAGE_PROGRESS.gate) / 0.065,
-        0,
-        1
-      );
-      if (blend < 1) {
-        desired.lerpVectors(HERO_CAMERA, desired, blend);
-        target.lerpVectors(HERO_TARGET, lookAhead, blend);
-      }
-
-      camera.fov = THREE.MathUtils.lerp(
-        camera.fov,
-        mobile ? Math.min(rig.fov + 3, 42) : rig.fov,
-        0.1
-      );
-    }
-
-    const positionDamping = 1 - Math.exp(-3.4 * Math.max(delta, 0.001));
-    const targetDamping = 1 - Math.exp(-4.6 * Math.max(delta, 0.001));
-    currentPosition.current.lerp(desired, positionDamping);
-    currentTarget.current.lerp(target, targetDamping);
-    camera.position.copy(currentPosition.current);
-    camera.lookAt(currentTarget.current);
-    camera.updateProjectionMatrix();
-  });
-
-  return null;
-}
-
-function TaxiGuidance({ journeyCurve }) {
-  const { points, arrows } = useMemo(() => {
-    const route = [];
-    const routeEnd = 0.86;
-    for (let index = 0; index <= 100; index += 1) {
-      const t = (index / 100) * routeEnd;
-      const point = journeyCurve.getPointAt(t);
-      point.y = -0.382;
-      route.push(point);
-    }
-
-    // Small directional chevrons follow the horizontal taxi lane in the hero,
-    // matching the arrows drawn in the wireframe without cluttering the runway.
-    const arrowSets = [];
-    for (let index = 0; index < 8; index += 1) {
-      const t = 0.025 + index * 0.022;
-      const tip = journeyCurve.getPointAt(t);
-      const next = journeyCurve.getPointAt(Math.min(1, t + 0.006));
-      const dx = next.x - tip.x;
-      const dz = next.z - tip.z;
-      const length = Math.max(0.001, Math.hypot(dx, dz));
-      const fx = dx / length;
-      const fz = dz / length;
-      const size = 0.2;
-      const wing = 0.13;
-      const base = new THREE.Vector3(tip.x - fx * size, -0.379, tip.z - fz * size);
-      const perp = new THREE.Vector3(-fz * wing, 0, fx * wing);
-      const point = new THREE.Vector3(tip.x, -0.379, tip.z);
-      arrowSets.push([
-        [base.clone().add(perp), point],
-        [base.clone().sub(perp), point],
-      ]);
-    }
-
-    return { points: route, arrows: arrowSets };
-  }, [journeyCurve]);
-
-  return (
-    <group renderOrder={4}>
-      <Line points={points} color="#f5d36a" lineWidth={1.7} transparent opacity={0.38} />
-      <Line points={points} color="#e7b934" lineWidth={1.0} transparent opacity={0.86} />
-      {arrows.map((segments, index) => (
-        <group key={index}>
-          <Line points={segments[0]} color="#e7b934" lineWidth={1.4} transparent opacity={0.82} />
-          <Line points={segments[1]} color="#e7b934" lineWidth={1.4} transparent opacity={0.82} />
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function JourneyHeadlineBackdrop({ scrollPositionRef, journeyRef }) {
-  const headlineRef = useRef(null);
-
-  // Keep the outlined headline visible on the opening gate shot and fade it
-  // away as the user scrolls into the taxi / U-turn sequence.
-  useEffect(() => {
-    let frame = 0;
-    const updateOpacity = () => {
-      const progress = getJourneyProgress(scrollPositionRef, journeyRef);
-      const fade = THREE.MathUtils.smoothstep(progress, 0.025, 0.19);
-      if (headlineRef.current) {
-        headlineRef.current.style.opacity = String(0.7 * (1 - fade));
-      }
-      frame = window.requestAnimationFrame(updateOpacity);
+    const image = context.createImageData(size, size);
+    let state = seed >>> 0;
+    const random = () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
     };
 
-    updateOpacity();
-    return () => window.cancelAnimationFrame(frame);
-  }, [scrollPositionRef, journeyRef]);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        // Low-frequency asphalt mottling blended with fine granular noise.
+        const broad =
+          Math.sin((x / size) * Math.PI * 8 + 0.7) * 2.2 +
+          Math.cos((y / size) * Math.PI * 10 + 1.4) * 1.8 +
+          Math.sin(((x + y) / size) * Math.PI * 14) * 1.3;
+        const grain = (random() - 0.5) * 19;
+        const value = 49 + broad + grain;
+        const index = (y * size + x) * 4;
+        image.data[index] = Math.max(26, Math.min(75, value - 1));
+        image.data[index + 1] = Math.max(27, Math.min(76, value));
+        image.data[index + 2] = Math.max(32, Math.min(83, value + 5));
+        image.data[index + 3] = 255;
+      }
+    }
 
-  return (
-    <svg
-      ref={headlineRef}
-      className="journey-headline-backdrop"
-      aria-hidden="true"
-      viewBox="0 0 1920 420"
-      preserveAspectRatio="none"
-      style={{
-        opacity: 0.7,
-        transition: "opacity 120ms linear",
-        transform: "translateY(-20px)",
-        willChange: "opacity, transform",
-      }}
-    >
-      <defs>
-        {/* Soft blue tint inside the outline, kept light so the airport remains visible through it. */}
-        <linearGradient id="headline-text-gradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f0f8ff" stopOpacity="0.34" />
-          <stop offset="36%" stopColor="#c5e4fb" stopOpacity="0.27" />
-          <stop offset="68%" stopColor="#a8d4f4" stopOpacity="0.17" />
-          <stop offset="100%" stopColor="#edf7ff" stopOpacity="0.06" />
-        </linearGradient>
-        {/* Fade the whole headline vertically: crisp at the top, dissolving toward the bottom. */}
-        <linearGradient id="headline-vertical-fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="white" stopOpacity="1" />
-          <stop offset="38%" stopColor="white" stopOpacity="1" />
-          <stop offset="54%" stopColor="white" stopOpacity="0.72" />
-          <stop offset="70%" stopColor="white" stopOpacity="0.28" />
-          <stop offset="86%" stopColor="white" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-        <mask id="headline-outline-mask">
-          <rect width="1920" height="420" fill="url(#headline-vertical-fade)" />
-        </mask>
-      </defs>
-      <text
-        x="960"
-        y="310"
-        textAnchor="middle"
-        textLength="1770"
-        lengthAdjust="spacingAndGlyphs"
-        fontFamily="Inter, Arial, Helvetica, sans-serif"
-        fontSize="270"
-        fontWeight="500"
-        letterSpacing="-10"
-        fill="url(#headline-text-gradient)"
-        stroke="#ffffff"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        strokeOpacity="0.96"
-        mask="url(#headline-outline-mask)"
-      >
-        Ideas Take Flight
-      </text>
-    </svg>
-  );
-}
+    context.putImageData(image, 0, 0);
 
-function AirportJourneyScene({
-  scrollPositionRef,
-  journeyRef,
-}) {
-  const journeyCurve = useMemo(
-    () => createJourneyCurve(),
-    []
-  );
+    // Diffuse worn/tire patches; they should be noticed up close, not dominate.
+    for (let index = 0; index < 18; index += 1) {
+      const x = random() * size;
+      const y = random() * size;
+      const radius = 14 + random() * 34;
+      const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+      const shade = random() > 0.5 ? "63, 64, 70" : "29, 30, 35";
+      gradient.addColorStop(0, `rgba(${shade}, ${0.08 + random() * 0.08})`);
+      gradient.addColorStop(1, `rgba(${shade}, 0)`);
+      context.fillStyle = gradient;
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
 
-  return (
-    <>
-      {/* Keep the renderer's clear pixels transparent. The CSS sky and headline
-          sit behind this scene, so terminal geometry naturally masks the type. */}
-      <fog attach="fog" args={["#c9e4f6", 36, 96]} />
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeatX, repeatY);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  }
 
-      <hemisphereLight
-        args={["#eaf8ff", "#6689a8", 0.82]}
-      />
-
-      <ambientLight intensity={0.2} />
-
-      <directionalLight
-        position={[-14, 10, 12]}
-        intensity={2.15}
-        color="#fff4e5"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-      />
-
-      <directionalLight
-        position={[10, 7, -6]}
-        intensity={0.48}
-        color="#acdfff"
-      />
-
-      <GatePlatform />
-      <TaxiGuidance journeyCurve={journeyCurve} />
-
-      <AircraftErrorBoundary>
-        <Suspense fallback={null}>
-          <JourneyAircraft
-            scrollPositionRef={scrollPositionRef}
-            journeyRef={journeyRef}
-            journeyCurve={journeyCurve}
+  /* =========================================================
+     APRON
+  ========================================================= */
+  
+  function Apron() {
+    const asphaltTexture = useMemo(() => createAsphaltTexture(5, 7, 137), []);
+    return (
+      <group>
+  
+        <mesh
+          position={[
+            0,
+            -0.42,
+            -2,
+          ]}
+          rotation={[
+            -Math.PI / 2,
+            0,
+            0,
+          ]}
+          receiveShadow
+        >
+          <planeGeometry
+            args={[
+              64,
+              84,
+            ]}
           />
+  
+          <meshStandardMaterial
+            map={asphaltTexture || undefined}
+            color="#ffffff"
+            roughness={0.98}
+            metalness={0.0}
+          />
+        </mesh>
+  
+  
+        {[-9, -5, -1, 3, 7].map(
+          (z) => (
+            <mesh
+              key={`h-${z}`}
+              position={[
+                0,
+                -0.394,
+                z,
+              ]}
+              rotation={[
+                -Math.PI / 2,
+                0,
+                0,
+              ]}
+            >
+              <planeGeometry
+                args={[
+                  28,
+                  0.012,
+                ]}
+              />
+  
+              <meshBasicMaterial
+                color="#8b8e95"
+                transparent
+                opacity={0.08}
+              />
+            </mesh>
+          )
+        )}
+  
+  
+        {[-10, -5, 0, 5, 10].map(
+          (x) => (
+            <mesh
+              key={`v-${x}`}
+              position={[
+                x,
+                -0.394,
+                -2,
+              ]}
+              rotation={[
+                -Math.PI / 2,
+                0,
+                0,
+              ]}
+            >
+              <planeGeometry
+                args={[
+                  0.012,
+                  32,
+                ]}
+              />
+  
+              <meshBasicMaterial
+                color="#8b8e95"
+                transparent
+                opacity={0.055}
+              />
+            </mesh>
+          )
+        )}
+  
+      </group>
+    );
+  }
+  
+  
+  /* =========================================================
+     STAND MARKINGS
+  ========================================================= */
+  
+  function StandMarkings() {
+    return (
+      <group>
+        {/* Keep only the yellow stand lead-in mark. Removing the loose white
+            cross-bars makes the taxi route's two edge stripes read as one road. */}
+        <mesh
+          position={[-1.0, -0.412, 0.2]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <planeGeometry args={[0.06, 6]} />
+          <meshBasicMaterial color={C.yellow} />
+        </mesh>
+      </group>
+    );
+  }
+
+    /* =========================================================
+     TAXIWAY + RUNWAY
+     A darker, broad runway is layered beyond the taxi connector:
+     warm amber edge lines, dashed white centerline, subtle asphalt
+     repairs and a narrow grass shoulder give it the illustrated reference look.
+  ========================================================= */
+
+  function Taxiway() {
+    const asphaltTexture = useMemo(() => createAsphaltTexture(2.5, 5, 781), []);
+    const connectorTexture = useMemo(() => createAsphaltTexture(1.5, 3, 391), []);
+    const runwayCenterX = -21.0;
+    const runwayCenterZ = -33.0;
+    const runwayLength = 33.5;
+    const runwayWidth = 17.0;
+    const runwayStartZ = runwayCenterZ + runwayLength / 2;
+    const runwayEdgeX = runwayWidth / 2;
+
+    const pavementPatches = [];
+    const patchColors = ["#414148", "#2d2e34", "#393a40", "#4a4b51"];
+    for (let row = 0; row < 9; row += 1) {
+      for (let col = 0; col < 5; col += 1) {
+        // Keep the patches irregular and understated, like repaired asphalt slabs.
+        if ((row + col) % 4 === 0) continue;
+        pavementPatches.push({
+          x: runwayCenterX + (col - 2) * 3.05 + (row % 2 ? 0.36 : -0.22),
+          z: runwayStartZ - 2.2 - row * 3.35 + (col % 2 ? 0.55 : 0),
+          width: 1.75 + ((row + col) % 3) * 0.42,
+          depth: 1.15 + ((row * 2 + col) % 2) * 0.28,
+          color: patchColors[(row + col) % patchColors.length],
+        });
+      }
+    }
+
+    const centerDashes = Array.from({ length: 13 }, (_, index) =>
+      runwayStartZ - 3.9 - index * 2.25
+    );
+    const thresholdBars = Array.from({ length: 7 }, (_, index) =>
+      runwayCenterX + (index - 3) * 2.15
+    );
+    const edgeLights = Array.from({ length: 8 }, (_, index) =>
+      runwayStartZ - 1.3 - index * 4.25
+    );
+
+    return (
+      <group>
+        {/* Taxi connector remains lighter and narrower than the runway. */}
+        <mesh
+          position={[-21.0, -0.414, -9.0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[7.2, 24.0]} />
+          <meshStandardMaterial
+            map={connectorTexture || undefined}
+            color="#ffffff"
+            roughness={0.98}
+            metalness={0.0}
+          />
+        </mesh>
+
+        {/* Olive grass shoulders sit just beyond the runway edge. */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`runway-grass-${side}`}
+            position={[runwayCenterX + side * (runwayEdgeX + 0.95), -0.412, runwayCenterZ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
+          >
+            <planeGeometry args={[1.9, runwayLength + 0.2]} />
+            <meshStandardMaterial color="#969d20" roughness={1} metalness={0} />
+          </mesh>
+        ))}
+
+        {/* Main asphalt body. */}
+        <mesh
+          position={[runwayCenterX, -0.409, runwayCenterZ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[runwayWidth, runwayLength]} />
+          <meshStandardMaterial
+            map={asphaltTexture || undefined}
+            color="#ffffff"
+            roughness={0.99}
+            metalness={0.0}
+          />
+        </mesh>
+
+        {/* Low-contrast repairs and rectangular asphalt panels. */}
+        {pavementPatches.map((patch, index) => (
+          <mesh
+            key={`runway-patch-${index}`}
+            position={[patch.x, -0.404, patch.z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[patch.width, patch.depth]} />
+            <meshBasicMaterial color={patch.color} transparent opacity={0.25} depthWrite={false} />
+          </mesh>
+        ))}
+
+        {/* Warm orange edge markings from the reference image. */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`runway-edge-${side}`}
+            position={[runwayCenterX + side * (runwayEdgeX - 0.34), -0.397, runwayCenterZ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.095, runwayLength - 0.35]} />
+            <meshBasicMaterial color="#ffb45d" />
+          </mesh>
+        ))}
+
+        {/* Broken white runway centerline. */}
+        {centerDashes.map((z, index) => (
+          <mesh
+            key={`runway-center-dash-${index}`}
+            position={[runwayCenterX, -0.395, z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.24, 1.22]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* Threshold bars at the taxiway-to-runway entry. */}
+        {thresholdBars.map((x, index) => (
+          <mesh
+            key={`runway-threshold-${index}`}
+            position={[x, -0.395, runwayStartZ - 0.35]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.48, 1.35]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* A pair of broad aiming-point blocks add depth from the low camera. */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`runway-aiming-point-${side}`}
+            position={[runwayCenterX + side * 4.35, -0.395, runwayCenterZ + 1.0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.68, 3.6]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* Small edge lights, spaced along the grassy shoulders. */}
+        {edgeLights.flatMap((z, index) =>
+          [-1, 1].map((side) => {
+            const x = runwayCenterX + side * (runwayEdgeX + 1.72);
+            return (
+              <group key={`runway-edge-light-${index}-${side}`} position={[x, -0.225, z]}>
+                <mesh>
+                  <cylinderGeometry args={[0.035, 0.045, 0.37, 8]} />
+                  <meshStandardMaterial color="#f5f1e9" roughness={0.72} />
+                </mesh>
+                <mesh position={[0, 0.17, 0]}>
+                  <cylinderGeometry args={[0.042, 0.042, 0.055, 8]} />
+                  <meshStandardMaterial color="#ffb45d" emissive="#8a4219" emissiveIntensity={0.12} />
+                </mesh>
+              </group>
+            );
+          })
+        )}
+
+        {/* Subtle taxi connector edge dashes remain visible approaching the threshold. */}
+        {Array.from({ length: 7 }, (_, index) => -1.6 - index * 2.35).map((z, index) => (
+          <mesh key={`connector-dash-${index}`} position={[-21.0, -0.405, z]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.12, 0.68]} />
+            <meshBasicMaterial color="#f5f2ec" transparent opacity={0.78} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+
+
+  /* =========================================================
+     TERMINAL
+  ========================================================= */
+  
+  function TerminalBay({ position, gateLabel, showAirportSign = false }) {
+    const windowCenters = Array.from({ length: 10 }, (_, index) => -3.55 + index * 0.79);
+    const frameCenters = Array.from({ length: 11 }, (_, index) => -3.95 + index * 0.79);
+    const roofPanelLines = Array.from({ length: 13 }, (_, index) => -3.9 + index * 0.65);
+
+    return (
+      <group position={position}>
+        {/*
+          Build the terminal as a real glazed curtain-wall assembly instead of
+          placing glass directly over one solid box. The room shell stays behind
+          the glazing so the facade gains depth and reads more like an airport.
+        */}
+        {/* Rear wall and end walls */}
+        <mesh position={[0, 0, -0.97]} castShadow receiveShadow>
+          <boxGeometry args={[8.45, 3.58, 0.24]} />
+          <meshStandardMaterial color="#d9e3e9" roughness={0.72} metalness={0.025} />
+        </mesh>
+        {[-4.12, 4.12].map((x) => (
+          <mesh key={`end-wall-${x}`} position={[x, 0, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.26, 3.62, 2.05]} />
+            <meshStandardMaterial color="#dfe7ec" roughness={0.66} metalness={0.025} />
+          </mesh>
+        ))}
+
+        {/* Interior floor, structural depth and warm practical lighting. */}
+        <mesh position={[0, -1.43, -0.04]} receiveShadow>
+          <boxGeometry args={[8.12, 0.08, 1.74]} />
+          <meshStandardMaterial color="#aebfc9" roughness={0.86} />
+        </mesh>
+        <mesh position={[0, -1.382, 0.12]}>
+          <boxGeometry args={[7.85, 0.018, 1.34]} />
+          <meshPhysicalMaterial color="#dbe7ed" roughness={0.28} metalness={0.04} clearcoat={0.42} />
+        </mesh>
+        <mesh position={[0, 1.28, -0.08]}>
+          <boxGeometry args={[7.95, 0.12, 1.75]} />
+          <meshStandardMaterial color="#dce5ea" roughness={0.62} />
+        </mesh>
+        {/* Interior columns with metallic pressure caps. */}
+        {[-3.15, -1.55, 0.05, 1.65, 3.2].map((x) => (
+          <group key={`interior-column-${x}`} position={[x, -0.05, -0.48]}>
+            <mesh castShadow>
+              <boxGeometry args={[0.09, 2.62, 0.10]} />
+              <meshStandardMaterial color="#8fa7b5" roughness={0.38} metalness={0.24} />
+            </mesh>
+            <mesh position={[0, 0, 0.056]}>
+              <boxGeometry args={[0.018, 2.54, 0.012]} />
+              <meshStandardMaterial color="#dbe8ee" roughness={0.28} metalness={0.3} />
+            </mesh>
+          </group>
+        ))}
+        {/* Recessed linear ceiling luminaires with a warm light diffuser. */}
+        {[-3.25, -2.15, -1.05, 0.05, 1.15, 2.25, 3.35].map((x) => (
+          <group key={`ceiling-light-${x}`} position={[x, 1.205, 0.55]}>
+            <mesh>
+              <boxGeometry args={[0.66, 0.055, 0.09]} />
+              <meshStandardMaterial color="#8fa4b0" roughness={0.58} />
+            </mesh>
+            <mesh position={[0, -0.029, 0.006]}>
+              <boxGeometry args={[0.56, 0.012, 0.075]} />
+              <meshBasicMaterial color="#fff0d2" toneMapped={false} />
+            </mesh>
+          </group>
+        ))}
+        {/* Waiting seats sit on the interior floor and provide scale behind the glass. */}
+        {[-2.75, -1.0, 0.85, 2.55].map((x, index) => (
+          <group key={`waiting-seat-${index}`} position={[x, -1.29, -0.16]}>
+            <RoundedBox position={[0, 0.02, 0]} args={[0.54, 0.11, 0.40]} radius={0.035} smoothness={3}>
+              <meshStandardMaterial color={index % 2 ? "#607f92" : "#7897a8"} roughness={0.62} />
+            </RoundedBox>
+            <RoundedBox position={[0, 0.22, -0.145]} args={[0.52, 0.32, 0.075]} radius={0.025} smoothness={3}>
+              <meshStandardMaterial color="#6d8da0" roughness={0.64} />
+            </RoundedBox>
+            {[-0.19, 0.19].map((legX) => (
+              <mesh key={legX} position={[legX, -0.075, 0.04]}>
+                <boxGeometry args={[0.035, 0.12, 0.035]} />
+                <meshStandardMaterial color="#687d88" roughness={0.45} metalness={0.35} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        {/* A grounded gate-service counter sits deeper inside the concourse. */}
+        <group position={[0, -1.39, -0.64]}>
+          <RoundedBox position={[0, 0.37, 0]} args={[1.55, 0.74, 0.34]} radius={0.035} smoothness={3} castShadow>
+            <meshStandardMaterial color="#c9d6de" roughness={0.46} />
+          </RoundedBox>
+          <mesh position={[0, 0.75, 0.015]}>
+            <boxGeometry args={[1.42, 0.025, 0.30]} />
+            <meshStandardMaterial color="#f3f7f9" roughness={0.32} />
+          </mesh>
+          <mesh position={[0.39, 0.86, -0.03]}>
+            <boxGeometry args={[0.34, 0.17, 0.022]} />
+            <meshPhysicalMaterial color="#244b65" roughness={0.22} metalness={0.05} clearcoat={0.8} />
+          </mesh>
+        </group>
+
+        {/* Individual insulated glass panes with alternating cool reflections */}
+        {windowCenters.map((x, index) => (
+          <mesh key={`glass-pane-${index}`} position={[x, 0, 1.095]}>
+            <planeGeometry args={[0.755, 2.82]} />
+            <meshPhysicalMaterial
+              color={index % 3 === 0 ? "#9fc7dc" : index % 3 === 1 ? "#709fba" : "#b6d3e1"}
+              roughness={0.12}
+              metalness={0.08}
+              transparent
+              opacity={0.48}
+              transmission={0.16}
+              thickness={0.075}
+              ior={1.46}
+              clearcoat={1}
+              clearcoatRoughness={0.045}
+              envMapIntensity={1.9}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
+        {/* Broad soft sky bands give the glazing a readable reflected environment. */}
+        <mesh position={[0, 0.76, 1.129]} rotation={[0, 0, -0.035]}>
+          <planeGeometry args={[7.7, 0.42]} />
+          <meshBasicMaterial color="#f4fbff" transparent opacity={0.105} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.52, 1.129]} rotation={[0, 0, 0.025]}>
+          <planeGeometry args={[7.55, 0.22]} />
+          <meshBasicMaterial color="#8ec4e0" transparent opacity={0.075} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+
+        {/* Soft diagonal sky reflections across selected panes break up the flat blue grid. */}
+        {[-3.15, -1.58, -0.02, 1.55, 3.12].map((x, index) => (
+          <group key={`glass-sky-reflection-${index}`} position={[x, 0.02, 1.132]} rotation={[0, 0, -0.16]}>
+            <mesh>
+              <planeGeometry args={[0.16, 2.48]} />
+              <meshBasicMaterial color="#f2fbff" transparent opacity={0.16} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh position={[0.09, 0.05, 0.0005]}>
+              <planeGeometry args={[0.05, 2.34]} />
+              <meshBasicMaterial color="#b9e5f7" transparent opacity={0.18} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Exterior curtain-wall mullions */}
+        {frameCenters.map((x, index) => (
+          <group key={`curtain-frame-${index}`}>
+            <mesh position={[x, 0, 1.135]}>
+              <boxGeometry args={[0.045, 3.0, 0.085]} />
+              <meshStandardMaterial color="#d7e5ec" roughness={0.31} metalness={0.28} />
+            </mesh>
+            <mesh position={[x + 0.027, 0, 1.18]}>
+              <boxGeometry args={[0.012, 2.88, 0.012]} />
+              <meshStandardMaterial color="#547c94" roughness={0.3} metalness={0.18} />
+            </mesh>
+          </group>
+        ))}
+        {[-1.38, 0.02, 1.38].map((y) => (
+          <mesh key={`transom-${y}`} position={[0, y, 1.14]}>
+            <boxGeometry args={[7.82, 0.035, 0.085]} />
+            <meshStandardMaterial color="#c5d8e2" roughness={0.34} metalness={0.22} />
+          </mesh>
+        ))}
+
+        {/* Structural pressure joints at the bay edges add real curtain-wall depth. */}
+        {[-4.02, 4.02].map((x) => (
+          <group key={`facade-edge-joint-${x}`} position={[x, 0, 1.205]}>
+            <mesh>
+              <boxGeometry args={[0.09, 2.98, 0.09]} />
+              <meshStandardMaterial color="#6c8b9c" roughness={0.4} metalness={0.22} />
+            </mesh>
+            <mesh position={[x < 0 ? 0.055 : -0.055, 0, 0.012]}>
+              <boxGeometry args={[0.016, 2.82, 0.012]} />
+              <meshStandardMaterial color="#edf5f9" roughness={0.3} metalness={0.18} />
+            </mesh>
+          </group>
+        ))}
+
+        {/* Foundation / sill and structural head frame */}
+        <RoundedBox position={[0, -1.66, 0.18]} args={[8.62, 0.26, 2.12]} radius={0.025} smoothness={3} castShadow>
+          <meshStandardMaterial color="#c8d4dc" roughness={0.58} metalness={0.06} />
+        </RoundedBox>
+        <RoundedBox position={[0, 1.58, 0.12]} args={[8.68, 0.22, 2.22]} radius={0.035} smoothness={4} castShadow receiveShadow>
+          <meshStandardMaterial color="#e5edf2" roughness={0.36} metalness={0.08} />
+        </RoundedBox>
+        <mesh position={[0, 1.465, 1.17]}>
+          <boxGeometry args={[8.3, 0.045, 0.075]} />
+          <meshStandardMaterial color="#247fc0" roughness={0.36} metalness={0.12} />
+        </mesh>
+        <mesh position={[0, -1.51, 1.15]}>
+          <boxGeometry args={[8.15, 0.035, 0.07]} />
+          <meshStandardMaterial color="#f2f7fa" roughness={0.36} metalness={0.14} />
+        </mesh>
+
+        {/* Roof cap: layered metal coping and fine panel seams */}
+        <RoundedBox position={[0, 1.91, 0]} args={[8.92, 0.18, 2.32]} radius={0.035} smoothness={4} castShadow receiveShadow>
+          <meshStandardMaterial color="#f3f7f9" roughness={0.32} metalness={0.08} />
+        </RoundedBox>
+        <mesh position={[0, 2.006, -0.03]}>
+          <boxGeometry args={[8.84, 0.025, 2.25]} />
+          <meshStandardMaterial color="#aabac4" roughness={0.45} metalness={0.24} />
+        </mesh>
+        {roofPanelLines.map((x) => (
+          <mesh key={`roof-seam-${x}`} position={[x, 2.023, -0.03]}>
+            <boxGeometry args={[0.018, 0.012, 1.94]} />
+            <meshStandardMaterial color="#e8eef2" roughness={0.42} metalness={0.2} />
+          </mesh>
+        ))}
+        {/* Metal coping, a shallow rain channel and a recessed soffit light. */}
+        <mesh position={[0, 2.075, 0.99]}>
+          <boxGeometry args={[8.78, 0.055, 0.12]} />
+          <meshStandardMaterial color="#c0cdd5" roughness={0.3} metalness={0.28} />
+        </mesh>
+        <mesh position={[0, 1.795, 1.14]}>
+          <boxGeometry args={[8.25, 0.025, 0.035]} />
+          <meshBasicMaterial color="#fbe8c8" toneMapped={false} />
+        </mesh>
+        {[-3.8, -2.55, -1.25, 0, 1.25, 2.55, 3.8].map((x) => (
+          <mesh key={`roof-drain-${x}`} position={[x, 1.78, 1.15]}>
+            <boxGeometry args={[0.055, 0.12, 0.07]} />
+            <meshStandardMaterial color="#aebdc6" roughness={0.42} metalness={0.32} />
+          </mesh>
+        ))}
+
+        {/* Low-profile rooftop ventilation units, each with visible vent slats */}
+        {[-2.85, 0.1, 2.75].map((x) => (
+          <group key={`roof-vent-${x}`} position={[x, 2.11, -0.26]}>
+            <RoundedBox args={[0.92, 0.19, 0.64]} radius={0.035} smoothness={3}>
+              <meshStandardMaterial color="#b7c5ce" roughness={0.5} metalness={0.16} />
+            </RoundedBox>
+            {[-0.22, -0.11, 0, 0.11, 0.22].map((z) => (
+              <mesh key={z} position={[0, 0, z + 0.02]}>
+                <boxGeometry args={[0.72, 0.12, 0.022]} />
+                <meshStandardMaterial color="#718996" roughness={0.48} metalness={0.12} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+
+        {/* Gate pier with inset sign panel and slim metallic edge trims */}
+        <RoundedBox position={[-3.05, 0, 1.19]} args={[1.18, 3.48, 0.22]} radius={0.025} smoothness={4} castShadow>
+          <meshStandardMaterial color="#244a63" roughness={0.36} metalness={0.1} />
+        </RoundedBox>
+        {[-3.62, -2.48].map((x) => (
+          <mesh key={`pier-trim-${x}`} position={[x, 0, 1.315]}>
+            <boxGeometry args={[0.025, 3.40, 0.025]} />
+            <meshStandardMaterial color="#afc5d1" roughness={0.32} metalness={0.3} />
+          </mesh>
+        ))}
+        <RoundedBox position={[-3.05, 0.43, 1.34]} args={[1.08, 0.42, 0.045]} radius={0.018} smoothness={3}>
+          <meshStandardMaterial color="#087de0" roughness={0.28} metalness={0.04} emissive="#064b9c" emissiveIntensity={0.12} />
+        </RoundedBox>
+        <Suspense fallback={null}>
+          <Text
+            position={[-3.05, 0.43, 1.369]}
+            fontSize={0.16}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0}
+          >
+            {gateLabel}
+          </Text>
         </Suspense>
-      </AircraftErrorBoundary>
 
-      <ContactShadows
-        position={[0, -0.415, -0.2]}
-        scale={24}
-        opacity={0.34}
-        blur={2.5}
-        far={12}
-        resolution={1024}
-      />
+        {/* Sign blade above the glazing, with subtle metal brackets */}
+        {showAirportSign && (
+          <group position={[0, 2.16, 1.18]}>
+            <mesh position={[-1.72, -0.31, -0.06]}>
+              <boxGeometry args={[0.035, 0.23, 0.055]} />
+              <meshStandardMaterial color="#7b909c" metalness={0.24} roughness={0.36} />
+            </mesh>
+            <mesh position={[1.72, -0.31, -0.06]}>
+              <boxGeometry args={[0.035, 0.23, 0.055]} />
+              <meshStandardMaterial color="#7b909c" metalness={0.24} roughness={0.36} />
+            </mesh>
+            <RoundedBox args={[4.7, 0.48, 0.09]} radius={0.035} smoothness={4} castShadow>
+              <meshStandardMaterial color="#f7fbff" roughness={0.28} metalness={0.04} />
+            </RoundedBox>
+            <mesh position={[0, -0.205, 0.047]}>
+              <boxGeometry args={[4.5, 0.018, 0.015]} />
+              <meshStandardMaterial color="#b7ccd9" roughness={0.38} />
+            </mesh>
+            <Suspense fallback={null}>
+              <Text
+                position={[0, 0, 0.058]}
+                fontSize={0.27}
+                color="#215a87"
+                anchorX="center"
+                anchorY="middle"
+                outlineWidth={0}
+              >
+                International Airport
+              </Text>
+            </Suspense>
+          </group>
+        )}
+      </group>
+    );
+  }
+  function Terminal() {
+    return (
+      <group>
+        <TerminalBay position={[-12.6, 1.405, -4.0]} gateLabel="gate 1" />
+        <TerminalBay position={[-4.2, 1.405, -4.0]} gateLabel="gate 2" showAirportSign />
+        <TerminalBay position={[4.2, 1.405, -4.0]} gateLabel="gate 3" />
+        <TerminalBay position={[12.6, 1.405, -4.0]} gateLabel="gate 4" />
+      </group>
+    );
+  }
 
-      <Environment
-        preset="city"
-        environmentIntensity={0.3}
-      />
 
-      <JourneyCamera
-        scrollPositionRef={scrollPositionRef}
-        journeyRef={journeyRef}
-        journeyCurve={journeyCurve}
-      />
-    </>
-  );
-}
+  /* =========================================================
+     JET BRIDGE
+  ========================================================= */
+  
+  function JetBridge({ position = [2.15, 1.035, -1.25] }) {
+    return (
+      <group position={position} rotation={[0, Math.PI / 2, 0]}>
+  
+        <RoundedBox
+          args={[
+            2.9,
+            0.64,
+            0.86,
+          ]}
+          radius={0.04}
+          smoothness={4}
+          castShadow
+        >
+          <meshStandardMaterial
+            color="#cfd9df"
+            roughness={0.46}
+            metalness={0.06}
+          />
+        </RoundedBox>
+  
+  
+        {[-0.44, 0.44].map((z) => (
+          <mesh key={`bridge-glazing-${z}`} position={[0, 0.015, z]}>
+            <boxGeometry args={[2.68, 0.43, 0.022]} />
+            <meshPhysicalMaterial
+              color="#7298ad"
+              roughness={0.16}
+              metalness={0.08}
+              transparent
+              opacity={0.56}
+              clearcoat={1}
+              clearcoatRoughness={0.055}
+              envMapIntensity={1.55}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
 
-export default function AirportJourneyCanvas({
-  scrollPositionRef,
-  journeyRef,
-}) {
-  return (
-    <div
-      className="airport-scene-composite"
-      style={{
-        position: "absolute",
-        inset: 0,
-        overflow: "hidden",
-        background: "linear-gradient(180deg, #c9e6fa 0%, #e5f3fc 46%, #d5eafa 100%)",
-      }}
-    >
-      <JourneyHeadlineBackdrop
-        scrollPositionRef={scrollPositionRef}
-        journeyRef={journeyRef}
-      />
-      <Canvas
-        className="journey-canvas"
-        style={{ position: "absolute", inset: 0, zIndex: 1 }}
-        camera={{
-          position: [
-            HERO_CAMERA.x,
-            HERO_CAMERA.y,
-            HERO_CAMERA.z,
-          ],
-          fov: 48,
-          near: 0.1,
-          far: 140,
-        }}
-        dpr={[1, 1.5]}
-        shadows
-        gl={{
-          alpha: true,
-          antialias: true,
-          powerPreference: "high-performance",
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.92,
-        }}
-        onCreated={({ gl }) => {
-          gl.setClearColor(0x000000, 0);
-        }}
-        fallback={
-          <div className="journey-canvas-fallback">
-            <span>
-              Enable WebGL or hardware acceleration to view the
-              3D airport journey.
-            </span>
-          </div>
-        }
+        <mesh
+          position={[
+            0,
+            0.35,
+            0,
+          ]}
+        >
+          <boxGeometry
+            args={[
+              2.95,
+              0.055,
+              0.90,
+            ]}
+          />
+  
+          <meshStandardMaterial
+            color="#dfe1de"
+            roughness={0.28}
+          />
+        </mesh>
+  
+  
+        {[-1.0, -0.5, 0, 0.5, 1.0].map((x) => (
+          <group key={`bridge-rib-${x}`}>
+            {[-0.455, 0.455].map((z) => (
+              <mesh key={z} position={[x, 0.015, z]}>
+                <boxGeometry args={[0.035, 0.49, 0.032]} />
+                <meshStandardMaterial color="#e7edf0" roughness={0.26} metalness={0.22} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+        {/* Flexible accordion seal at the terminal end of the passenger bridge. */}
+        {[-1.43, -1.36, -1.29, -1.22].map((x, index) => (
+          <mesh key={`bridge-bellows-${x}`} position={[x, 0, 0]}>
+            <boxGeometry args={[0.035, 0.68 - index * 0.015, 0.9 - index * 0.015]} />
+            <meshStandardMaterial color={index % 2 ? "#687d87" : "#9eacb4"} roughness={0.72} metalness={0.05} />
+          </mesh>
+        ))}
+
+        <RoundedBox
+          position={[
+            -1.55,
+            0,
+            0,
+          ]}
+          args={[
+            0.28,
+            0.80,
+            0.88,
+          ]}
+          radius={0.025}
+          smoothness={3}
+        >
+          <meshStandardMaterial
+            color="#7d888b"
+            roughness={0.40}
+          />
+        </RoundedBox>
+  
+  
+        <mesh
+          position={[
+            0.85,
+            -0.67,
+            0,
+          ]}
+        >
+          <cylinderGeometry
+            args={[
+              0.055,
+              0.075,
+              1.30,
+              16,
+            ]}
+          />
+  
+          <meshStandardMaterial
+            color={C.metal}
+            roughness={0.44}
+            metalness={0.18}
+          />
+        </mesh>
+  
+  
+        {[-0.17, 0.17].map((z) => (
+          <group key={`bridge-wheel-${z}`} position={[0.85, -1.31, z]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh>
+              <cylinderGeometry args={[0.145, 0.145, 0.10, 20]} />
+              <meshStandardMaterial color="#373f42" roughness={0.68} />
+            </mesh>
+            <mesh>
+              <cylinderGeometry args={[0.058, 0.058, 0.105, 16]} />
+              <meshStandardMaterial color="#9baab1" roughness={0.38} metalness={0.42} />
+            </mesh>
+          </group>
+        ))}
+
+      </group>
+    );
+  }
+  
+  
+  /* =========================================================
+     GROUND EQUIPMENT
+  ========================================================= */
+  
+  function GroundCart({
+    position,
+    scale = 1,
+  }) {
+    return (
+      <group
+        position={position}
+        scale={scale}
       >
-        <AirportJourneyScene
-          scrollPositionRef={scrollPositionRef}
-          journeyRef={journeyRef}
-        />
-      </Canvas>
-    </div>
-  );
-}
+        <RoundedBox
+          position={[
+            0,
+            0.27,
+            0,
+          ]}
+          args={[
+            1.20,
+            0.27,
+            0.58,
+          ]}
+          radius={0.03}
+          smoothness={3}
+        >
+          <meshStandardMaterial
+            color="#c8cdcf"
+            roughness={0.5}
+          />
+        </RoundedBox>
+  
+  
+        {[-0.4, 0.4].map(
+          (x) => (
+            <mesh
+              key={x}
+              position={[
+                x,
+                0.05,
+                0,
+              ]}
+              rotation={[
+                Math.PI / 2,
+                0,
+                0,
+              ]}
+            >
+              <cylinderGeometry
+                args={[
+                  0.09,
+                  0.09,
+                  0.08,
+                  16,
+                ]}
+              />
+  
+              <meshStandardMaterial
+                color="#3c4447"
+              />
+            </mesh>
+          )
+        )}
+      </group>
+    );
+  }
+  
+  
+  /* =========================================================
+     SAFETY CONE
+  ========================================================= */
+  
+  function Cone({
+    position,
+  }) {
+    return (
+      <group
+        position={position}
+      >
+        <mesh
+          position={[
+            0,
+            0.20,
+            0,
+          ]}
+        >
+          <coneGeometry
+            args={[
+              0.10,
+              0.34,
+              14,
+            ]}
+          />
+  
+          <meshStandardMaterial
+            color="#efbd3e"
+            roughness={0.5}
+          />
+        </mesh>
+  
+  
+        <mesh
+          position={[
+            0,
+            0.015,
+            0,
+          ]}
+        >
+          <cylinderGeometry
+            args={[
+              0.14,
+              0.14,
+              0.03,
+              14,
+            ]}
+          />
+  
+          <meshStandardMaterial
+            color="#363c3f"
+          />
+        </mesh>
+      </group>
+    );
+  }
+  
+  
+  /* =========================================================
+     BACKGROUND AIRPORT
+  ========================================================= */
+  
+  function BackgroundAirport() {
+    return (
+      <group>
+        {/* A continuous distant concourse gives the airport a believable horizon. */}
+        <group position={[0, -0.42, -37.5]}>
+          <RoundedBox
+            position={[0, 1.45, 0]}
+            args={[42, 2.9, 1.7]}
+            radius={0.08}
+            smoothness={5}
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial color="#d5e0e7" roughness={0.68} metalness={0.025} />
+          </RoundedBox>
 
-useGLTF.preload(AIRCRAFT_URL);
+          <mesh position={[0, 1.45, 0.865]}>
+            <boxGeometry args={[40.8, 2.05, 0.045]} />
+            <meshPhysicalMaterial
+              color="#426b83"
+              roughness={0.3}
+              metalness={0.08}
+              transparent
+              opacity={0.58}
+              clearcoat={0.28}
+            />
+          </mesh>
+
+          {Array.from({ length: 29 }).map((_, index) => (
+            <mesh key={index} position={[-19.6 + index * 1.4, 1.45, 0.895]}>
+              <boxGeometry args={[0.035, 2.1, 0.045]} />
+              <meshStandardMaterial color="#edf4f8" roughness={0.38} metalness={0.04} />
+            </mesh>
+          ))}
+
+          <RoundedBox
+            position={[0, 2.93, -0.02]}
+            args={[42.8, 0.15, 2.05]}
+            radius={0.035}
+            smoothness={4}
+            castShadow
+          >
+            <meshStandardMaterial color="#f5f8fa" roughness={0.38} />
+          </RoundedBox>
+
+          <mesh position={[0, 2.58, 0.88]}>
+            <boxGeometry args={[41.2, 0.07, 0.055]} />
+            <meshStandardMaterial color="#2b83c5" roughness={0.42} />
+          </mesh>
+
+          {[-16, -10, -4, 2, 8, 14].map((x) => (
+            <mesh key={x} position={[x, 3.08, -0.12]}>
+              <boxGeometry args={[1.55, 0.18, 0.72]} />
+              <meshStandardMaterial color="#b5c5cf" roughness={0.62} />
+            </mesh>
+          ))}
+        </group>
+
+        {/* Control tower: narrow shaft, glazed cab and a thin roof. */}
+        <group position={[20.5, -0.42, -32]}>
+          <RoundedBox position={[0, 2.1, 0]} args={[0.72, 4.2, 0.82]} radius={0.025} smoothness={4}>
+            <meshStandardMaterial color="#d5e0e7" roughness={0.6} />
+          </RoundedBox>
+          <RoundedBox position={[0, 4.35, 0]} args={[1.95, 0.72, 1.25]} radius={0.045} smoothness={5}>
+            <meshStandardMaterial color="#e5edf2" roughness={0.36} metalness={0.04} />
+          </RoundedBox>
+          <mesh position={[0, 4.36, 0.64]}>
+            <boxGeometry args={[1.68, 0.43, 0.035]} />
+            <meshPhysicalMaterial color="#345f78" roughness={0.2} metalness={0.08} transparent opacity={0.82} />
+          </mesh>
+          <RoundedBox position={[0, 4.76, 0]} args={[2.08, 0.1, 1.38]} radius={0.025} smoothness={4}>
+            <meshStandardMaterial color="#f5f8fa" roughness={0.34} />
+          </RoundedBox>
+        </group>
+      </group>
+    );
+  }
+
+
+  /* =========================================================
+     WORLD
+  ========================================================= */
+  
+  export default function GatePlatform() {
+    return (
+      <group>
+  
+        <Apron />
+  
+        <StandMarkings />
+  
+        <Taxiway />
+  
+        <BackgroundAirport />
+  
+        <Terminal />
+  
+        <JetBridge position={[-12.6, 1.035, -1.25]} />
+        <JetBridge position={[-4.2, 1.035, -1.25]} />
+        <JetBridge position={[4.2, 1.035, -1.25]} />
+        <JetBridge position={[12.6, 1.035, -1.25]} />
+  
+  
+        <GroundCart
+          position={[
+            -13.8,
+            -0.38,
+            -0.7,
+          ]}
+        />
+  
+        <GroundCart
+          position={[
+            -14.4,
+            -0.38,
+            -1.4,
+          ]}
+          scale={0.72}
+        />
+  
+  
+        <Cone
+          position={[
+            -10.8,
+            -0.42,
+            0.55,
+          ]}
+        />
+  
+        <Cone
+          position={[
+            2.3,
+            -0.42,
+            1.0,
+          ]}
+        />
+  
+      </group>
+    );
+  }
+  

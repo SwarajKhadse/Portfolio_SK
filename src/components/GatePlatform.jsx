@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import {
     RoundedBox,
     Text,
@@ -12,8 +12,8 @@ import {
   ========================================================= */
   
   const C = {
-    apron: "#b8c3ca",
-    runway: "#899eab",
+    apron: "#34353b",
+    runway: "#34353b",
   
     terminal: "#dfe7ec",
     terminalTop: "#f5f8fa",
@@ -35,11 +35,76 @@ import {
   };
   
   
+
+  /*
+   * Procedural charcoal asphalt: fine aggregate grain, gentle mottling, and
+   * low-contrast tire/wear marks. This avoids a flat single-color ground plane.
+   */
+  function createAsphaltTexture(repeatX = 5, repeatY = 7, seed = 1337) {
+    if (typeof document === "undefined") return null;
+
+    const size = 512;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+
+    const image = context.createImageData(size, size);
+    let state = seed >>> 0;
+    const random = () => {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        // Low-frequency asphalt mottling blended with fine granular noise.
+        const broad =
+          Math.sin((x / size) * Math.PI * 8 + 0.7) * 2.2 +
+          Math.cos((y / size) * Math.PI * 10 + 1.4) * 1.8 +
+          Math.sin(((x + y) / size) * Math.PI * 14) * 1.3;
+        const grain = (random() - 0.5) * 19;
+        const value = 49 + broad + grain;
+        const index = (y * size + x) * 4;
+        image.data[index] = Math.max(26, Math.min(75, value - 1));
+        image.data[index + 1] = Math.max(27, Math.min(76, value));
+        image.data[index + 2] = Math.max(32, Math.min(83, value + 5));
+        image.data[index + 3] = 255;
+      }
+    }
+
+    context.putImageData(image, 0, 0);
+
+    // Diffuse worn/tire patches; they should be noticed up close, not dominate.
+    for (let index = 0; index < 18; index += 1) {
+      const x = random() * size;
+      const y = random() * size;
+      const radius = 14 + random() * 34;
+      const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+      const shade = random() > 0.5 ? "63, 64, 70" : "29, 30, 35";
+      gradient.addColorStop(0, `rgba(${shade}, ${0.08 + random() * 0.08})`);
+      gradient.addColorStop(1, `rgba(${shade}, 0)`);
+      context.fillStyle = gradient;
+      context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeatX, repeatY);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
   /* =========================================================
      APRON
   ========================================================= */
   
   function Apron() {
+    const asphaltTexture = useMemo(() => createAsphaltTexture(5, 7, 137), []);
     return (
       <group>
   
@@ -58,44 +123,16 @@ import {
         >
           <planeGeometry
             args={[
-              60,
+              64,
               84,
             ]}
           />
   
           <meshStandardMaterial
-            color={C.apron}
-            roughness={0.9}
-            metalness={0.01}
-          />
-        </mesh>
-  
-  
-        <mesh
-          position={[
-            0,
-            -0.405,
-            -1.5,
-          ]}
-          rotation={[
-            -Math.PI / 2,
-            0,
-            0,
-          ]}
-        >
-          <planeGeometry
-            args={[
-              20,
-              12,
-            ]}
-          />
-  
-          <meshPhysicalMaterial
-            color="#7f929e"
-            roughness={0.36}
-            clearcoat={0.35}
-            transparent
-            opacity={0.045}
+            map={asphaltTexture || undefined}
+            color="#ffffff"
+            roughness={0.98}
+            metalness={0.0}
           />
         </mesh>
   
@@ -123,9 +160,9 @@ import {
               />
   
               <meshBasicMaterial
-                color="#777f82"
+                color="#8b8e95"
                 transparent
-                opacity={0.095}
+                opacity={0.08}
               />
             </mesh>
           )
@@ -155,9 +192,9 @@ import {
               />
   
               <meshBasicMaterial
-                color="#777f82"
+                color="#8b8e95"
                 transparent
-                opacity={0.075}
+                opacity={0.055}
               />
             </mesh>
           )
@@ -262,140 +299,185 @@ import {
   }
   
   
-  /* =========================================================
-     TAXIWAY
+    /* =========================================================
+     TAXIWAY + RUNWAY
+     A darker, broad runway is layered beyond the taxi connector:
+     warm amber edge lines, dashed white centerline, subtle asphalt
+     repairs and a narrow grass shoulder give it the illustrated reference look.
   ========================================================= */
-  
+
   function Taxiway() {
+    const asphaltTexture = useMemo(() => createAsphaltTexture(2.5, 5, 781), []);
+    const connectorTexture = useMemo(() => createAsphaltTexture(1.5, 3, 391), []);
+    const runwayCenterX = -21.0;
+    const runwayCenterZ = -33.0;
+    const runwayLength = 33.5;
+    const runwayWidth = 17.0;
+    const runwayStartZ = runwayCenterZ + runwayLength / 2;
+    const runwayEdgeX = runwayWidth / 2;
+
+    const pavementPatches = [];
+    const patchColors = ["#414148", "#2d2e34", "#393a40", "#4a4b51"];
+    for (let row = 0; row < 9; row += 1) {
+      for (let col = 0; col < 5; col += 1) {
+        // Keep the patches irregular and understated, like repaired asphalt slabs.
+        if ((row + col) % 4 === 0) continue;
+        pavementPatches.push({
+          x: runwayCenterX + (col - 2) * 3.05 + (row % 2 ? 0.36 : -0.22),
+          z: runwayStartZ - 2.2 - row * 3.35 + (col % 2 ? 0.55 : 0),
+          width: 1.75 + ((row + col) % 3) * 0.42,
+          depth: 1.15 + ((row * 2 + col) % 2) * 0.28,
+          color: patchColors[(row + col) % patchColors.length],
+        });
+      }
+    }
+
+    const centerDashes = Array.from({ length: 13 }, (_, index) =>
+      runwayStartZ - 3.9 - index * 2.25
+    );
+    const thresholdBars = Array.from({ length: 7 }, (_, index) =>
+      runwayCenterX + (index - 3) * 2.15
+    );
+    const edgeLights = Array.from({ length: 8 }, (_, index) =>
+      runwayStartZ - 1.3 - index * 4.25
+    );
+
     return (
       <group>
-  
+        {/* Taxi connector remains lighter and narrower than the runway. */}
         <mesh
-          position={[
-            -21.0,
-            -0.414,
-            -14.0,
-          ]}
-          rotation={[
-            -Math.PI / 2,
-            0,
-            0,
-          ]}
+          position={[-21.0, -0.414, -9.0]}
+          rotation={[-Math.PI / 2, 0, 0]}
           receiveShadow
         >
-          <planeGeometry
-            args={[
-              6.8,
-              28,
-            ]}
-          />
-  
+          <planeGeometry args={[7.2, 24.0]} />
           <meshStandardMaterial
-            color={C.runway}
-            roughness={0.92}
-            metalness={0.01}
+            map={connectorTexture || undefined}
+            color="#ffffff"
+            roughness={0.98}
+            metalness={0.0}
           />
         </mesh>
-  
-  
-        {Array.from({ length: 10 }).map((_, index) => (
+
+        {/* Olive grass shoulders sit just beyond the runway edge. */}
+        {[-1, 1].map((side) => (
           <mesh
-            key={index}
-            position={[-21.0, -0.405, -2.0 - index * 2.25]}
+            key={`runway-grass-${side}`}
+            position={[runwayCenterX + side * (runwayEdgeX + 0.95), -0.412, runwayCenterZ]}
             rotation={[-Math.PI / 2, 0, 0]}
+            receiveShadow
           >
-            <planeGeometry args={[0.12, 0.72]} />
-            <meshBasicMaterial color="#f5faff" />
+            <planeGeometry args={[1.9, runwayLength + 0.2]} />
+            <meshStandardMaterial color="#969d20" roughness={1} metalness={0} />
           </mesh>
         ))}
 
-        {[-24.4, -17.6].map(
-          (x) => (
-            <mesh
-              key={x}
-              position={[
-                x,
-                -0.405,
-                -14.0,
-              ]}
-              rotation={[
-                -Math.PI / 2,
-                0,
-                0,
-              ]}
-            >
-              <planeGeometry
-                args={[
-                  0.05,
-                  28,
-                ]}
-              />
-  
-              <meshBasicMaterial
-                color={C.white}
-              />
-            </mesh>
-          )
+        {/* Main asphalt body. */}
+        <mesh
+          position={[runwayCenterX, -0.409, runwayCenterZ]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[runwayWidth, runwayLength]} />
+          <meshStandardMaterial
+            map={asphaltTexture || undefined}
+            color="#ffffff"
+            roughness={0.99}
+            metalness={0.0}
+          />
+        </mesh>
+
+        {/* Low-contrast repairs and rectangular asphalt panels. */}
+        {pavementPatches.map((patch, index) => (
+          <mesh
+            key={`runway-patch-${index}`}
+            position={[patch.x, -0.404, patch.z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[patch.width, patch.depth]} />
+            <meshBasicMaterial color={patch.color} transparent opacity={0.25} depthWrite={false} />
+          </mesh>
+        ))}
+
+        {/* Warm orange edge markings from the reference image. */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`runway-edge-${side}`}
+            position={[runwayCenterX + side * (runwayEdgeX - 0.34), -0.397, runwayCenterZ]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.095, runwayLength - 0.35]} />
+            <meshBasicMaterial color="#ffb45d" />
+          </mesh>
+        ))}
+
+        {/* Broken white runway centerline. */}
+        {centerDashes.map((z, index) => (
+          <mesh
+            key={`runway-center-dash-${index}`}
+            position={[runwayCenterX, -0.395, z]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.24, 1.22]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* Threshold bars at the taxiway-to-runway entry. */}
+        {thresholdBars.map((x, index) => (
+          <mesh
+            key={`runway-threshold-${index}`}
+            position={[x, -0.395, runwayStartZ - 0.35]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.48, 1.35]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* A pair of broad aiming-point blocks add depth from the low camera. */}
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`runway-aiming-point-${side}`}
+            position={[runwayCenterX + side * 4.35, -0.395, runwayCenterZ + 1.0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
+            <planeGeometry args={[0.68, 3.6]} />
+            <meshBasicMaterial color="#f7f2e9" />
+          </mesh>
+        ))}
+
+        {/* Small edge lights, spaced along the grassy shoulders. */}
+        {edgeLights.flatMap((z, index) =>
+          [-1, 1].map((side) => {
+            const x = runwayCenterX + side * (runwayEdgeX + 1.72);
+            return (
+              <group key={`runway-edge-light-${index}-${side}`} position={[x, -0.225, z]}>
+                <mesh>
+                  <cylinderGeometry args={[0.035, 0.045, 0.37, 8]} />
+                  <meshStandardMaterial color="#f5f1e9" roughness={0.72} />
+                </mesh>
+                <mesh position={[0, 0.17, 0]}>
+                  <cylinderGeometry args={[0.042, 0.042, 0.055, 8]} />
+                  <meshStandardMaterial color="#ffb45d" emissive="#8a4219" emissiveIntensity={0.12} />
+                </mesh>
+              </group>
+            );
+          })
         )}
-  
-  
-        {Array.from({
-          length: 10,
-        }).map((_, index) => {
-          const z =
-            -2.8 -
-            index * 2.35;
-  
-          return (
-            <group key={index}>
-              <mesh
-                position={[
-                  -24.4,
-                  -0.385,
-                  z,
-                ]}
-              >
-                <sphereGeometry
-                  args={[
-                    0.045,
-                    10,
-                    10,
-                  ]}
-                />
-  
-                <meshBasicMaterial
-                  color="#88b6c6"
-                />
-              </mesh>
-  
-              <mesh
-                position={[
-                  -17.6,
-                  -0.385,
-                  z,
-                ]}
-              >
-                <sphereGeometry
-                  args={[
-                    0.045,
-                    10,
-                    10,
-                  ]}
-                />
-  
-                <meshBasicMaterial
-                  color="#88b6c6"
-                />
-              </mesh>
-            </group>
-          );
-        })}
-  
+
+        {/* Subtle taxi connector edge dashes remain visible approaching the threshold. */}
+        {Array.from({ length: 7 }, (_, index) => -1.6 - index * 2.35).map((z, index) => (
+          <mesh key={`connector-dash-${index}`} position={[-21.0, -0.405, z]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.12, 0.68]} />
+            <meshBasicMaterial color="#f5f2ec" transparent opacity={0.78} />
+          </mesh>
+        ))}
       </group>
     );
   }
-  
-  
+
+
   /* =========================================================
      TERMINAL
   ========================================================= */
@@ -500,32 +582,42 @@ import {
           <mesh key={`glass-pane-${index}`} position={[x, 0, 1.095]}>
             <planeGeometry args={[0.755, 2.82]} />
             <meshPhysicalMaterial
-              color={index % 3 === 0 ? "#8fb9d0" : index % 3 === 1 ? "#6598b3" : "#a8c8d8"}
-              roughness={0.14}
-              metalness={0.16}
+              color={index % 3 === 0 ? "#9fc7dc" : index % 3 === 1 ? "#709fba" : "#b6d3e1"}
+              roughness={0.12}
+              metalness={0.08}
               transparent
-              opacity={0.43}
-              transmission={0.24}
-              thickness={0.055}
+              opacity={0.48}
+              transmission={0.16}
+              thickness={0.075}
               ior={1.46}
               clearcoat={1}
-              clearcoatRoughness={0.08}
-              envMapIntensity={1.35}
+              clearcoatRoughness={0.045}
+              envMapIntensity={1.9}
               depthWrite={false}
               side={THREE.DoubleSide}
             />
           </mesh>
         ))}
+        {/* Broad soft sky bands give the glazing a readable reflected environment. */}
+        <mesh position={[0, 0.76, 1.129]} rotation={[0, 0, -0.035]}>
+          <planeGeometry args={[7.7, 0.42]} />
+          <meshBasicMaterial color="#f4fbff" transparent opacity={0.105} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+        <mesh position={[0, -0.52, 1.129]} rotation={[0, 0, 0.025]}>
+          <planeGeometry args={[7.55, 0.22]} />
+          <meshBasicMaterial color="#8ec4e0" transparent opacity={0.075} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+
         {/* Soft diagonal sky reflections across selected panes break up the flat blue grid. */}
         {[-3.15, -1.58, -0.02, 1.55, 3.12].map((x, index) => (
           <group key={`glass-sky-reflection-${index}`} position={[x, 0.02, 1.132]} rotation={[0, 0, -0.16]}>
             <mesh>
-              <planeGeometry args={[0.12, 2.54]} />
-              <meshBasicMaterial color="#f2fbff" transparent opacity={0.18} depthWrite={false} side={THREE.DoubleSide} />
+              <planeGeometry args={[0.16, 2.48]} />
+              <meshBasicMaterial color="#f2fbff" transparent opacity={0.16} depthWrite={false} side={THREE.DoubleSide} />
             </mesh>
             <mesh position={[0.09, 0.05, 0.0005]}>
-              <planeGeometry args={[0.035, 2.38]} />
-              <meshBasicMaterial color="#b9e5f7" transparent opacity={0.20} depthWrite={false} side={THREE.DoubleSide} />
+              <planeGeometry args={[0.05, 2.34]} />
+              <meshBasicMaterial color="#b9e5f7" transparent opacity={0.18} depthWrite={false} side={THREE.DoubleSide} />
             </mesh>
           </group>
         ))}
@@ -733,8 +825,9 @@ import {
               metalness={0.08}
               transparent
               opacity={0.56}
-              clearcoat={0.95}
-              clearcoatRoughness={0.1}
+              clearcoat={1}
+              clearcoatRoughness={0.055}
+              envMapIntensity={1.55}
               side={THREE.DoubleSide}
             />
           </mesh>
