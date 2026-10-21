@@ -267,3 +267,140 @@
 @media (max-width: 720px) {
   .journey-headline-backdrop { top: 108px; width: 125%; left: -12.5%; }
 }
+
+
+/* Right-side journey stepper */
+.journey-stepper {
+  position: absolute;
+  z-index: 35;
+  top: 50%;
+  right: clamp(22px, 3.1vw, 48px);
+  width: 28px;
+  height: clamp(190px, 33vh, 286px);
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.journey-stepper::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 1px;
+  content: "";
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.92),
+    rgba(196, 198, 230, 0.84) 58%,
+    rgba(255, 255, 255, 0.7)
+  );
+  transform: translateX(-50%);
+}
+
+.journey-stepper ol {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journey-stepper li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+}
+
+.journey-stepper button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.journey-stepper button::before {
+  width: 6px;
+  height: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 0 0 1px rgba(33, 22, 111, 0.07);
+  content: "";
+  transition:
+    width 180ms ease,
+    height 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.journey-stepper button[aria-current="step"]::before {
+  width: 10px;
+  height: 10px;
+  border-color: #FF6548;
+  background: #FF6548;
+  box-shadow: 0 0 0 4px rgba(255, 101, 72, 0.16);
+}
+
+.journey-stepper button[aria-current="step"]::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  border-radius: 50%;
+  content: "";
+  box-shadow: 0 0 0 1px rgba(33, 22, 111, 0.08);
+}
+
+.journey-stepper button:hover::before,
+.journey-stepper button:focus-visible::before {
+  width: 9px;
+  height: 9px;
+  background: #FF9364;
+}
+
+.journey-stepper button:focus-visible {
+  outline: 2px solid #21166F;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1000px) {
+  .journey-stepper {
+    right: 18px;
+    height: clamp(170px, 30vh, 240px);
+  }
+
+  .story-card--about {
+    right: calc(4vw + 22px);
+    width: min(560px, 58vw);
+  }
+}
+
+@media (max-width: 720px) {
+  .journey-stepper {
+    right: 5px;
+    width: 22px;
+    height: 170px;
+    top: 55%;
+  }
+
+  .journey-stepper button {
+    width: 18px;
+    height: 18px;
+  }
+
+  .story-card--about,
+  .story-card--details,
+  .story-card--runway {
+    right: 42px;
+  }
+}

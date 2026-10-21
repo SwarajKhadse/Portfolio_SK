@@ -26,7 +26,7 @@ import GatePlatform from "./GatePlatform.jsx";
 // Restore the original textured aircraft used in the earlier, better-looking render.
 const AIRCRAFT_URL = "/models/aircraft.glb";
 
-const HERO_AIRCRAFT_POSITION = new THREE.Vector3(-5.5, -0.405, 2.8);
+const HERO_AIRCRAFT_POSITION = new THREE.Vector3(-5.5, -0.405, 4.6);
 // The original textured model points along local -Z; this yaw aligns it with the
 // horizontal, left-to-right gate apron shown in the wireframe.
 const HERO_AIRCRAFT_ROTATION_Y = -0.10;
@@ -192,19 +192,19 @@ function normalizeAircraft(source, targetLength = 8.2) {
     // returns on a physically separate parallel lane, then curves onto the runway.
     const groundY = -0.405;
     const points = [
-      new THREE.Vector3(-5.5, groundY, 2.8),
-      new THREE.Vector3(-3.2, groundY, 2.85),
-      new THREE.Vector3(-0.5, groundY, 2.9),
-      new THREE.Vector3(2.3, groundY, 2.9),
-      new THREE.Vector3(5.2, groundY, 2.85),
-      new THREE.Vector3(8.5, groundY, 2.8),
+      new THREE.Vector3(-5.5, groundY, 4.6),
+      new THREE.Vector3(-3.2, groundY, 4.65),
+      new THREE.Vector3(-0.5, groundY, 4.7),
+      new THREE.Vector3(2.3, groundY, 4.7),
+      new THREE.Vector3(5.2, groundY, 4.65),
+      new THREE.Vector3(8.5, groundY, 4.6),
     ];
 
     // Broad circular 180-degree turnaround. A 6.5-unit radius gives the
     // aircraft room to swing around instead of appearing to pivot in place.
     const loopCenterX = 8.5;
     const loopRadius = 6.5;
-    const outboundZ = 2.8;
+    const outboundZ = 4.6;
     const loopCenterZ = outboundZ + loopRadius;
     const loopSteps = 20;
     for (let step = 1; step <= loopSteps; step += 1) {
@@ -678,9 +678,63 @@ function createTaxiwayAsphaltTexture() {
   return texture;
 }
 
+function createTaxiwayGrassTexture() {
+  if (typeof document === "undefined") return null;
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const image = context.createImageData(size, size);
+  let seed = 4613;
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const grain = (random() - 0.5) * 24;
+      const wave = Math.sin((x / size) * Math.PI * 12) * 3
+        + Math.cos((y / size) * Math.PI * 9) * 2;
+      const index = (y * size + x) * 4;
+      image.data[index] = Math.max(65, Math.min(126, 88 + grain * 0.42 + wave));
+      image.data[index + 1] = Math.max(126, Math.min(190, 157 + grain * 0.6 + wave * 1.2));
+      image.data[index + 2] = Math.max(36, Math.min(88, 51 + grain * 0.23 + wave * 0.5));
+      image.data[index + 3] = 255;
+    }
+  }
+  context.putImageData(image, 0, 0);
+
+  for (let index = 0; index < 1000; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    context.strokeStyle = random() > 0.52
+      ? "rgba(218, 246, 160, 0.18)"
+      : "rgba(35, 92, 36, 0.17)";
+    context.lineWidth = 0.5 + random() * 0.5;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + (random() - 0.5) * 2, y - 1 - random() * 3);
+    context.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(1, 12);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function TaxiGuidance({ journeyCurve }) {
   const asphaltTexture = useMemo(() => createTaxiwayAsphaltTexture(), []);
-  const { points, arrows, roadGeometry, edgeGeometries } = useMemo(() => {
+  const grassTexture = useMemo(() => createTaxiwayGrassTexture(), []);
+  const { points, arrows, roadGeometry, edgeGeometries, shoulderGeometries } = useMemo(() => {
     // Sample the painted route densely so both the asphalt strip and markings
     // flow as one road through the circular turnaround and the parallel lane.
     const route = [];
@@ -709,6 +763,10 @@ function TaxiGuidance({ journeyCurve }) {
     const markingInset = 0.17;
     const leftEdge = [];
     const rightEdge = [];
+    const leftShoulderInner = [];
+    const leftShoulderOuter = [];
+    const rightShoulderInner = [];
+    const rightShoulderOuter = [];
     const roadPositions = [];
     const roadUvs = [];
     const roadIndices = [];
@@ -740,6 +798,22 @@ function TaxiGuidance({ journeyCurve }) {
         point.x - normalX * lineOffset,
         -0.402,
         point.z - normalZ * lineOffset
+      ));
+
+      // Narrow grass verges follow the actual curved taxiway rather than using
+      // straight rectangular strips, so the road and landscape read as one design.
+      const shoulderOuterOffset = roadHalfWidth + 2.35;
+      leftShoulderInner.push(new THREE.Vector3(
+        point.x + normalX * roadHalfWidth, -0.414, point.z + normalZ * roadHalfWidth
+      ));
+      leftShoulderOuter.push(new THREE.Vector3(
+        point.x + normalX * shoulderOuterOffset, -0.414, point.z + normalZ * shoulderOuterOffset
+      ));
+      rightShoulderInner.push(new THREE.Vector3(
+        point.x - normalX * roadHalfWidth, -0.414, point.z - normalZ * roadHalfWidth
+      ));
+      rightShoulderOuter.push(new THREE.Vector3(
+        point.x - normalX * shoulderOuterOffset, -0.414, point.z - normalZ * shoulderOuterOffset
       ));
 
       if (index > 0) {
@@ -798,6 +872,37 @@ function TaxiGuidance({ journeyCurve }) {
 
     const edgeGeometries = [makeStripeGeometry(leftEdge), makeStripeGeometry(rightEdge)];
 
+    const makeShoulderGeometry = (innerPoints, outerPoints) => {
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+      innerPoints.forEach((inner, index) => {
+        const outer = outerPoints[index];
+        positions.push(inner.x, inner.y, inner.z, outer.x, outer.y, outer.z);
+        const v = index / Math.max(1, innerPoints.length - 1);
+        uvs.push(0, v, 1, v);
+        if (index > 0) {
+          const previousPair = (index - 1) * 2;
+          const currentPair = index * 2;
+          indices.push(
+            previousPair, currentPair, previousPair + 1,
+            previousPair + 1, currentPair, currentPair + 1
+          );
+        }
+      });
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    };
+
+    const shoulderGeometries = [
+      makeShoulderGeometry(leftShoulderInner, leftShoulderOuter),
+      makeShoulderGeometry(rightShoulderInner, rightShoulderOuter),
+    ];
+
     // Small yellow direction chevrons stay on the outbound lane only; fewer and
     // lighter arrows keep the road from feeling like a schematic overlay.
     const arrowSets = [];
@@ -821,17 +926,32 @@ function TaxiGuidance({ journeyCurve }) {
       ]);
     }
 
-    return { points: route, arrows: arrowSets, roadGeometry, edgeGeometries };
+    return { points: route, arrows: arrowSets, roadGeometry, edgeGeometries, shoulderGeometries };
   }, [journeyCurve]);
 
   useEffect(() => () => {
     roadGeometry.dispose();
     edgeGeometries.forEach((geometry) => geometry.dispose());
+    shoulderGeometries.forEach((geometry) => geometry.dispose());
     asphaltTexture?.dispose();
-  }, [roadGeometry, edgeGeometries, asphaltTexture]);
+    grassTexture?.dispose();
+  }, [roadGeometry, edgeGeometries, shoulderGeometries, asphaltTexture, grassTexture]);
 
   return (
     <group>
+      {/* Textured green shoulders border the dark asphalt along the full curve. */}
+      {shoulderGeometries.map((geometry, index) => (
+        <mesh key={`taxi-grass-shoulder-${index}`} geometry={geometry} renderOrder={1} frustumCulled={false}>
+          <meshStandardMaterial
+            map={grassTexture || undefined}
+            color="#ffffff"
+            roughness={1}
+            metalness={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+
       {/* Continuous charcoal pavement makes the taxi path feel like a physical road. */}
       <mesh geometry={roadGeometry} renderOrder={2} frustumCulled={false}>
         <meshStandardMaterial

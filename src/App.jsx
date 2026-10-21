@@ -106,6 +106,20 @@ function App() {
     });
   }, []);
 
+  const navigateToChapter = useCallback((progress) => {
+    const section = journeyRef.current;
+    if (!section) return;
+
+    const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+    const scrollRange = Math.max(1, section.offsetHeight - window.innerHeight);
+    const safeProgress = Math.min(1, Math.max(0, progress));
+
+    lenisRef.current?.scrollTo(sectionTop + scrollRange * safeProgress, {
+      duration: 1.1,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    });
+  }, []);
+
   return (
     <main className="app continuous-app">
       <div ref={journeyRef} className="journey-flow">
@@ -124,6 +138,7 @@ function App() {
               onNavigateToWork={() => navigateTo(workRef)}
               onNavigateToExperience={() => navigateTo(experienceRef)}
               onNavigateToAbout={navigateToAbout}
+              onNavigateToChapter={navigateToChapter}
             />
           </section>
         </div>

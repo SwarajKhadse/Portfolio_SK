@@ -36,6 +36,7 @@ export default function AirportGateTrial({
   onNavigateToWork,
   onNavigateToExperience,
   onNavigateToAbout,
+  onNavigateToChapter,
 }) {
   const [chapterIndex, setChapterIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -150,6 +151,25 @@ export default function AirportGateTrial({
           </div>
         )}
 
+
+        <aside className="journey-stepper" aria-label="Journey Progress">
+          <ol>
+            {CHAPTERS.map((step, index) => (
+              <li key={step.id}>
+                <button
+                  type="button"
+                  aria-label={`Go to ${step.label} chapter`}
+                  aria-current={chapterIndex === index ? "step" : undefined}
+                  title={step.label}
+                  onClick={() => {
+                    const progress = index === 0 ? 0 : Math.min(0.995, step.start + 0.008);
+                    navigate(() => onNavigateToChapter?.(progress));
+                  }}
+                />
+              </li>
+            ))}
+          </ol>
+        </aside>
       </div>
     </div>
   );
